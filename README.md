@@ -99,6 +99,18 @@ For musl targets, static linking is enabled automatically. Use `no-default-featu
     no-default-features: 'true'
 ```
 
+### Archive Artifacts
+
+Create .tar.gz archives on Linux/macOS or .zip on Windows:
+
+```yaml
+- uses: michaelklishin/rust-release-action@v0
+  with:
+    command: release-linux
+    target: x86_64-unknown-linux-gnu
+    archive: 'true'
+```
+
 ### Windows MSI Installer
 
 Build a Windows MSI installer using cargo-wix:
@@ -139,6 +151,7 @@ Use `working-directory` for projects in subdirectories:
 | `package` | Cargo package name for workspaces | - |
 | `no-default-features` | Build with --no-default-features | `false` |
 | `target-rustflags` | Extra RUSTFLAGS for the build | - |
+| `archive` | Create archive (.tar.gz on Linux/macOS, .zip on Windows) | `false` |
 | `working-directory` | Working directory | `.` |
 
 ## Outputs

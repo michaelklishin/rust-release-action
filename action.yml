@@ -59,6 +59,11 @@ inputs:
     description: 'Extra RUSTFLAGS for the build'
     required: false
 
+  archive:
+    description: 'Create archive (.tar.gz on Linux/macOS, .zip on Windows)'
+    required: false
+    default: 'false'
+
   working-directory:
     description: 'Working directory for commands'
     required: false
@@ -119,6 +124,7 @@ runs:
                 if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
                 if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
+                if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
                 nu $"($scripts)/release-linux.nu"
             }
             "release-macos" => {
@@ -127,6 +133,7 @@ runs:
                 if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
                 if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
+                if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
                 nu $"($scripts)/release-macos.nu"
             }
             "release-windows" => {
@@ -135,6 +142,7 @@ runs:
                 if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
                 if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
+                if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
                 nu $"($scripts)/release-windows.nu"
             }
             "release-windows-msi" => {

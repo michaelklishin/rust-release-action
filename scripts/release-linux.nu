@@ -7,6 +7,7 @@ def main [] {
     let info = get-cargo-info
     let binary_name = $env.BINARY_NAME? | default $info.name
     let version = $info.version
+    let create_archive = $env.ARCHIVE? | default "" | $in == "true"
 
     if $binary_name == "" {
         error "could not determine binary name"
@@ -30,19 +31,40 @@ def main [] {
         error $"binary not found: ($src)"
     }
 
-    let artifact = $"($binary_name)-($version)-($target)"
-    let artifact_path = $"($release_dir)/($artifact)"
-    cp $src $artifact_path
-    chmod +x $artifact_path
     copy-docs $release_dir
 
-    print $"(char nl)(ansi green)Build artifacts:(ansi reset)"
-    hr-line
-    ls $release_dir | print
+    let artifact_base = $"($binary_name)-($version)-($target)"
 
-    print $"(ansi green)Created:(ansi reset) ($artifact)"
-    output "artifact" $artifact
-    output "artifact_path" $artifact_path
+    if $create_archive {
+        # Create a tar.gz archive
+        let artifact = $"($artifact_base).tar.gz"
+        let artifact_path = $"($release_dir)/($artifact)"
+        print $"(ansi green)Creating archive:(ansi reset) ($artifact)"
+        tar -C $release_dir -czf $artifact_path $binary_name
+        chmod +x $"($release_dir)/($binary_name)"
+
+        print $"(char nl)(ansi green)Build artifacts:(ansi reset)"
+        hr-line
+        ls $release_dir | print
+
+        print $"(ansi green)Created:(ansi reset) ($artifact)"
+        output "artifact" $artifact
+        output "artifact_path" $artifact_path
+    } else {
+        # Rename the binary
+        let artifact = $artifact_base
+        let artifact_path = $"($release_dir)/($artifact)"
+        cp $src $artifact_path
+        chmod +x $artifact_path
+
+        print $"(char nl)(ansi green)Build artifacts:(ansi reset)"
+        hr-line
+        ls $release_dir | print
+
+        print $"(ansi green)Created:(ansi reset) ($artifact)"
+        output "artifact" $artifact
+        output "artifact_path" $artifact_path
+    }
 }
 
 def install-dependencies [target: string] {
