@@ -7,7 +7,7 @@ built as a collection of Nu shell scripts.
 
 This is a conventions-based, opinionated release process extracted from:
  
- * [rabbitmq/rabbitmqadmin-ng](https://github.com/rabbitmq/rabbitmqadmin-ng)
+ * [rabbitmq/rabbitmqadmin-rs](https://github.com/rabbitmq/rabbitmqadmin-rs)
  * [michaelklishin/rabbitmq-lqt](https://github.com/michaelklishin/rabbitmq-lqt)
  * [michaelklishin/frm](https://github.com/michaelklishin/frm)
 

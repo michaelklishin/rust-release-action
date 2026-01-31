@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-# Reads Cargo.toml and returns package name and version
+# Reads Cargo.toml and returns the package name and version
 export def get-cargo-info []: nothing -> record<name: string, version: string> {
     let cargo = open Cargo.toml
     let name = $cargo | get -o package.name | default ""
