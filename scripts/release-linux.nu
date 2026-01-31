@@ -73,6 +73,7 @@ def install-dependencies [target: string] {
         } else if $is_fedora {
             sudo dnf install -y pkg-config gcc-arm-linux-gnueabihf
         }
+        $env.CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER = "arm-linux-gnueabihf-gcc"
     }
 
     rustup target add $target

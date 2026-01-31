@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.1 (Jan 31, 2026)
+
+### Bug Fixes
+
+ * Set `CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER` for armv7 cross-compilation
+
 ## v0.9.0 (Jan 31, 2026)
 
 ### Enhancements
