@@ -15,8 +15,47 @@ export def output [key: string, value: string] {
     }
 }
 
-# Copies LICENSE-* and README.md to destination
+# Copies LICENSE-* and README.md to the destination
 export def copy-docs [dest: string] {
     glob LICENSE-* | each {|f| cp $f $dest }
     if ("README.md" | path exists) { cp README.md $dest }
+}
+
+# Ensures Cargo.lock exists
+export def ensure-lockfile [] {
+    if not ("Cargo.lock" | path exists) {
+        cargo generate-lockfile
+    }
+}
+
+# Builds with Cargo using the environment configuration
+export def cargo-build [target: string, binary_name: string] {
+    let package = $env.PACKAGE? | default ""
+    let no_default_features = $env.NO_DEFAULT_FEATURES? | default "" | $in == "true"
+    let target_rustflags = $env.TARGET_RUSTFLAGS? | default ""
+
+    if $target_rustflags != "" {
+        $env.RUSTFLAGS = $target_rustflags
+    }
+
+    # For musl targets, enables static linking
+    if ($target =~ "musl") and ($env.RUSTFLAGS? | default "" | is-empty) {
+        $env.RUSTFLAGS = "-C target-feature=+crt-static"
+    }
+
+    mut args = ["build" "--release" "--locked" "--target" $target "-q"]
+
+    if $package != "" {
+        $args = ($args | append ["--package" $package])
+    }
+
+    if $binary_name != "" {
+        $args = ($args | append ["--bin" $binary_name])
+    }
+
+    if $no_default_features {
+        $args = ($args | append "--no-default-features")
+    }
+
+    cargo ...$args
 }

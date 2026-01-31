@@ -46,6 +46,19 @@ inputs:
     description: 'Binary name (defaults to package name)'
     required: false
 
+  package:
+    description: 'Cargo package name for workspace builds'
+    required: false
+
+  no-default-features:
+    description: 'Build with --no-default-features'
+    required: false
+    default: 'false'
+
+  target-rustflags:
+    description: 'Extra RUSTFLAGS for the build'
+    required: false
+
   working-directory:
     description: 'Working directory for commands'
     required: false
@@ -103,16 +116,25 @@ runs:
             "release-linux" => {
                 if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
                 if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
+                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
+                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
+                if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
                 nu $"($scripts)/release-linux.nu"
             }
             "release-macos" => {
                 if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
                 if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
+                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
+                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
+                if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
                 nu $"($scripts)/release-macos.nu"
             }
             "release-windows" => {
                 if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
                 if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
+                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
+                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
+                if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
                 nu $"($scripts)/release-windows.nu"
             }
             _ => {

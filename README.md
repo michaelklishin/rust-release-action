@@ -74,6 +74,31 @@ Or specify explicitly:
     target: x86_64-unknown-linux-gnu
 ```
 
+### Workspace Builds
+
+For Cargo workspaces, specify the package name:
+
+```yaml
+- uses: michaelklishin/rust-release-action@v1
+  with:
+    command: release-linux
+    target: x86_64-unknown-linux-gnu
+    package: my-cli-bin
+    binary-name: my-cli
+```
+
+### Static Builds (musl)
+
+For musl targets, static linking is enabled automatically. Use `no-default-features` to disable features that require dynamic linking (e.g., native-tls):
+
+```yaml
+- uses: michaelklishin/rust-release-action@v1
+  with:
+    command: release-linux
+    target: x86_64-unknown-linux-musl
+    no-default-features: 'true'
+```
+
 ### Monorepo Support
 
 Use `working-directory` for projects in subdirectories:
@@ -98,6 +123,9 @@ Use `working-directory` for projects in subdirectories:
 | `manifest` | Path to Cargo.toml | `Cargo.toml` |
 | `target` | Rust target triple | platform default |
 | `binary-name` | Binary name | package name |
+| `package` | Cargo package name for workspaces | - |
+| `no-default-features` | Build with --no-default-features | `false` |
+| `target-rustflags` | Extra RUSTFLAGS for the build | - |
 | `working-directory` | Working directory | `.` |
 
 ## Outputs

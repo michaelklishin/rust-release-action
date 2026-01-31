@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-use common.nu [get-cargo-info, output, copy-docs]
+use common.nu [get-cargo-info, output, copy-docs, ensure-lockfile, cargo-build]
 
 def main [] {
     let target = $env.TARGET? | default "x86_64-unknown-linux-gnu"
@@ -20,23 +20,12 @@ def main [] {
     print $"Building ($binary_name) v($version) for ($target)"
 
     let release_dir = $"target/($target)/release"
+    rm -rf $release_dir
     mkdir $release_dir
 
-    if $target =~ "musl" {
-        if (which apt-get | is-not-empty) {
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq musl-tools
-        }
-    } else if $target =~ "aarch64.*linux" and (^uname -m | str trim) != "aarch64" {
-        if (which apt-get | is-not-empty) {
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq gcc-aarch64-linux-gnu
-        }
-        $env.CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = "aarch64-linux-gnu-gcc"
-    }
-
-    rustup target add $target
-    cargo build --release --locked --target $target -q
+    ensure-lockfile
+    install-dependencies $target
+    cargo-build $target $binary_name
 
     let src = $"($release_dir)/($binary_name)"
     if not ($src | path exists) {
@@ -53,4 +42,37 @@ def main [] {
     print $"Created: ($artifact)"
     output "artifact" $artifact
     output "artifact_path" $artifact_path
+}
+
+def install-dependencies [target: string] {
+    # Detect the OS
+    let is_ubuntu = (which apt-get | is-not-empty)
+    let is_fedora = (which dnf | is-not-empty)
+
+    if $target =~ "musl" {
+        if $is_ubuntu {
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq musl-tools
+        }
+    } else if $target == "aarch64-unknown-linux-gnu" {
+        let arch = (^uname -m | str trim)
+        if $arch != "aarch64" {
+            if $is_ubuntu {
+                sudo apt-get update -qq
+                sudo apt-get install -y -qq gcc-aarch64-linux-gnu
+            } else if $is_fedora {
+                sudo dnf install -y gcc-aarch64-linux-gnu
+            }
+            $env.CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = "aarch64-linux-gnu-gcc"
+        }
+    } else if $target == "armv7-unknown-linux-gnueabihf" {
+        if $is_ubuntu {
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq pkg-config gcc-arm-linux-gnueabihf
+        } else if $is_fedora {
+            sudo dnf install -y pkg-config gcc-arm-linux-gnueabihf
+        }
+    }
+
+    rustup target add $target
 }

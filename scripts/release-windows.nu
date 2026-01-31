@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-use common.nu [get-cargo-info, output, copy-docs]
+use common.nu [get-cargo-info, output, copy-docs, ensure-lockfile, cargo-build]
 
 def main [] {
     let target = $env.TARGET? | default "x86_64-pc-windows-msvc"
@@ -20,10 +20,12 @@ def main [] {
     print $"Building ($binary_name) v($version) for ($target)"
 
     let release_dir = $"target/($target)/release"
+    rm -rf $release_dir
     mkdir $release_dir
 
+    ensure-lockfile
     rustup target add $target
-    cargo build --release --locked --target $target -q
+    cargo-build $target $binary_name
 
     let src = $"($release_dir)/($binary_name).exe"
     if not ($src | path exists) {
