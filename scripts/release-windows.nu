@@ -45,11 +45,21 @@ def main [] {
 
     if $create_archive {
         let artifact = $"($artifact_base).zip"
-        let artifact_path = $"($release_dir)/($artifact)"
+        let original_dir = (pwd)
         print $"(ansi green)Creating archive:(ansi reset) ($artifact)"
         cd $release_dir
-        7z a $artifact $"($binary_name).exe"
+        let files = (ls
+            | where type == file
+            | where { |f| not ($f.name | str ends-with ".zip") }
+            | where { |f| not ($f.name | str ends-with ".sha256") }
+            | where { |f| not ($f.name | str ends-with ".sha512") }
+            | where { |f| not ($f.name | str ends-with ".b2") }
+            | get name
+            | path basename)
+        7z a $artifact ...$files
+        cd $original_dir
 
+        let artifact_path = $"($release_dir)/($artifact)"
         let checksums = generate-checksums $artifact_path
 
         print $"(char nl)(ansi green)Build artifacts:(ansi reset)"

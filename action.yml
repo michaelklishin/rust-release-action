@@ -229,6 +229,7 @@ runs:
                 if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
                 if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
+                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
                 if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
                 if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
                 nu $"($scripts)/release-windows-msi.nu"

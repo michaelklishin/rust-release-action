@@ -2,7 +2,8 @@
 
 # Reads Cargo.toml and returns the package name and version
 export def get-cargo-info []: nothing -> record<name: string, version: string> {
-    let cargo = open Cargo.toml
+    let manifest = $env.MANIFEST_PATH? | default "Cargo.toml"
+    let cargo = open $manifest
     let name = $cargo | get -o package.name | default ""
     let version = $cargo | get -o package.version | default ($cargo | get -o workspace.package.version | default "")
     { name: $name, version: $version }
@@ -23,9 +24,9 @@ export def output-multiline [key: string, value: string] {
     }
 }
 
-# Copies LICENSE-* and README.md to the destination
+# Copies LICENSE* and README.md to the destination
 export def copy-docs [dest: string] {
-    glob LICENSE-* | each {|f| cp $f $dest }
+    glob LICENSE* | each {|f| cp $f $dest }
     if ("README.md" | path exists) { cp README.md $dest }
 }
 
@@ -90,9 +91,7 @@ export def generate-checksums [file_path: string]: nothing -> record<sha256: str
     }
 
     if ($checksum_types | str contains "sha512") {
-        let hash = (open $file_path --raw | hash sha256)  # Nu doesn't have sha512, using sha256 as fallback
         let checksum_file = $"($file_path).sha512"
-        # Use external sha512sum if available
         if (which sha512sum | is-not-empty) {
             let result = (sha512sum $file_path | split row " " | first)
             $"($result)  ($file_path | path basename)\n" | save -f $checksum_file

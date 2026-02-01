@@ -46,9 +46,17 @@ def main [] {
     if $create_archive {
         let artifact = $"($artifact_base).tar.gz"
         let artifact_path = $"($release_dir)/($artifact)"
-        print $"(ansi green)Creating archive:(ansi reset) ($artifact)"
-        tar -C $release_dir -czf $artifact_path $binary_name
         chmod +x $binary_path
+        print $"(ansi green)Creating archive:(ansi reset) ($artifact)"
+        let files = (ls $release_dir
+            | where type == file
+            | where { |f| not ($f.name | str ends-with ".tar.gz") }
+            | where { |f| not ($f.name | str ends-with ".sha256") }
+            | where { |f| not ($f.name | str ends-with ".sha512") }
+            | where { |f| not ($f.name | str ends-with ".b2") }
+            | get name
+            | path basename)
+        tar -C $release_dir -czf $artifact_path ...$files
 
         let checksums = generate-checksums $artifact_path
 

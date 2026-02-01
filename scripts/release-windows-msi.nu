@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-use common.nu [get-cargo-info, output, output-multiline, copy-docs, ensure-lockfile, cargo-build, hr-line, error, check-rust-toolchain, generate-checksums, build-summary]
+use common.nu [get-cargo-info, output, output-multiline, copy-docs, copy-includes, ensure-lockfile, cargo-build, hr-line, error, check-rust-toolchain, generate-checksums, build-summary]
 
 def main [] {
     check-rust-toolchain
@@ -33,6 +33,7 @@ def main [] {
     }
 
     copy-docs $release_dir
+    copy-includes $release_dir
 
     # Copy binaries to target/release for cargo-wix
     cp -r ($"($release_dir)/*" | into glob) target/release/

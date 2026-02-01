@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.13.0 (Feb 1, 2026)
+
+### Bug Fixes
+
+ * Fix archives to include LICENSE and README files
+ * Exclude previous artifacts and checksums from archives
+ * Fix Windows archive path handling after directory change
+ * Use MANIFEST_PATH in get-cargo-info
+ * Include LICENSE files without suffix (e.g., LICENSE vs LICENSE-MIT)
+ * Release workflow now triggers on pre-release tags
+
 ## v0.12.0 (Jan 31, 2026)
 
 ### Enhancements
