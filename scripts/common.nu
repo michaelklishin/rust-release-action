@@ -100,14 +100,14 @@ export def generate-checksums [file_path: string]: nothing -> record<sha256: str
     }
 
     if ($checksum_types | str contains "sha512") {
-        let checksum_file = $"($file_path).sha512"
-        if (which sha512sum | is-not-empty) {
-            let result = (sha512sum $file_path | split row " " | first)
-            $"($result)  ($file_path | path basename)\n" | save -f $checksum_file
-            $checksums.sha512 = $result
-            print $"(ansi green)SHA512:(ansi reset) ($result)"
+        let result = if (which sha512sum | is-not-empty) {
+            sha512sum $file_path | split row " " | first
         } else if (which shasum | is-not-empty) {
-            let result = (shasum -a 512 $file_path | split row " " | first)
+            shasum -a 512 $file_path | split row " " | first
+        } else { "" }
+
+        if $result != "" {
+            let checksum_file = $"($file_path).sha512"
             $"($result)  ($file_path | path basename)\n" | save -f $checksum_file
             $checksums.sha512 = $result
             print $"(ansi green)SHA512:(ansi reset) ($result)"

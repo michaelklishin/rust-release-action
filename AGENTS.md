@@ -24,7 +24,7 @@ Set required environment variables before running scripts.
 ## Key Files
 
  * `action.yml`: GitHub Action definition
- * `scripts/common.nu`: shared utilities (`get-cargo-info`, `output`, `cargo-build`, `generate-checksums`, `copy-docs`)
+ * `scripts/common.nu`: shared utilities (`cargo-build`, `generate-checksums`, `output-build-results`)
  * `scripts/extract-changelog.nu`: extracts release details from a change log file (see `rabbitmqadmin-ng` for example)
  * `scripts/validate-version.nu`: version validation logic, including pre-release versions
  * `scripts/get-version.nu`: reads version from `Cargo.toml`
