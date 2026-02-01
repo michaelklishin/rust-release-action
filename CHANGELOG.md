@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.12.0 (Jan 31, 2026)
+
+### Enhancements
+
+ * Add checksum generation (SHA256, SHA512, BLAKE2) with `checksum` input
+ * Add `features` input for enabling Cargo features
+ * Add `include` input for additional files in archives
+ * Add outputs: `binary_name`, `binary_path`, `target`, `sha256`, `summary`
+ * Support pre-release version tags (alpha, beta, rc)
+
+## v0.11.0 (Jan 31, 2026)
+
+### Enhancements
+
+ * Add `locked` input for reproducible builds using `--locked` flag
+ * Release commands now output `version` for use in downstream workflow steps
+
 ## v0.10.0 (Jan 31, 2026)
 
 ### Enhancements

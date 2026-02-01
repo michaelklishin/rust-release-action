@@ -1,8 +1,10 @@
 #!/usr/bin/env nu
 
-use common.nu [get-cargo-info, output, copy-docs, ensure-lockfile, cargo-build, hr-line, error]
+use common.nu [get-cargo-info, output, output-multiline, copy-docs, copy-includes, ensure-lockfile, cargo-build, hr-line, error, check-rust-toolchain, generate-checksums, build-summary]
 
 def main [] {
+    check-rust-toolchain
+
     let target = $env.TARGET? | default "x86_64-pc-windows-msvc"
     let info = get-cargo-info
     let binary_name = $env.BINARY_NAME? | default $info.name
@@ -26,44 +28,64 @@ def main [] {
     rustup target add $target
     cargo-build $target $binary_name
 
-    let src = $"($release_dir)/($binary_name).exe"
-    if not ($src | path exists) {
-        error $"binary not found: ($src)"
+    let binary_path = $"($release_dir)/($binary_name).exe"
+    if not ($binary_path | path exists) {
+        error $"binary not found: ($binary_path)"
     }
 
     copy-docs $release_dir
+    copy-includes $release_dir
 
     let artifact_base = $"($binary_name)-($version)-($target)"
 
+    output "version" $version
+    output "binary_name" $binary_name
+    output "target" $target
+    output "binary_path" ($binary_path | str replace --all '\' '/')
+
     if $create_archive {
-        # Create a zip archive using 7z (available on Windows runners)
         let artifact = $"($artifact_base).zip"
         let artifact_path = $"($release_dir)/($artifact)"
         print $"(ansi green)Creating archive:(ansi reset) ($artifact)"
         cd $release_dir
         7z a $artifact $"($binary_name).exe"
 
+        let checksums = generate-checksums $artifact_path
+
         print $"(char nl)(ansi green)Build artifacts:(ansi reset)"
         hr-line
         ls $release_dir | print
 
-        # Normalise path separators for GitHub Actions
         let normalised_path = $artifact_path | str replace --all '\' '/'
         print $"(ansi green)Created:(ansi reset) ($artifact)"
         output "artifact" $artifact
         output "artifact_path" $normalised_path
+        output "sha256" $checksums.sha256
+        output "sha512" $checksums.sha512
+        output "b2" $checksums.b2
+
+        let summary = build-summary $binary_name $version $target $artifact $normalised_path $checksums
+        output-multiline "summary" $summary
     } else {
-        # Rename the binary
         let artifact = $"($artifact_base).exe"
         let artifact_path = $"($release_dir)/($artifact)"
-        cp $src $artifact_path
+        cp $binary_path $artifact_path
+
+        let checksums = generate-checksums $artifact_path
 
         print $"(char nl)(ansi green)Build artifacts:(ansi reset)"
         hr-line
         ls $release_dir | print
 
+        let normalised_path = $artifact_path | str replace --all '\' '/'
         print $"(ansi green)Created:(ansi reset) ($artifact)"
         output "artifact" $artifact
-        output "artifact_path" $artifact_path
+        output "artifact_path" $normalised_path
+        output "sha256" $checksums.sha256
+        output "sha512" $checksums.sha512
+        output "b2" $checksums.b2
+
+        let summary = build-summary $binary_name $version $target $artifact $normalised_path $checksums
+        output-multiline "summary" $summary
     }
 }

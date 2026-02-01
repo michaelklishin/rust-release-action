@@ -1,8 +1,10 @@
 #!/usr/bin/env nu
 
-use common.nu [get-cargo-info, output, copy-docs, ensure-lockfile, cargo-build, hr-line, error]
+use common.nu [get-cargo-info, output, output-multiline, copy-docs, copy-includes, ensure-lockfile, cargo-build, hr-line, error, check-rust-toolchain, generate-checksums, build-summary]
 
 def main [] {
+    check-rust-toolchain
+
     let target = $env.TARGET? | default "aarch64-apple-darwin"
     let info = get-cargo-info
     let binary_name = $env.BINARY_NAME? | default $info.name
@@ -26,22 +28,29 @@ def main [] {
     rustup target add $target
     cargo-build $target $binary_name
 
-    let src = $"($release_dir)/($binary_name)"
-    if not ($src | path exists) {
-        error $"binary not found: ($src)"
+    let binary_path = $"($release_dir)/($binary_name)"
+    if not ($binary_path | path exists) {
+        error $"binary not found: ($binary_path)"
     }
 
     copy-docs $release_dir
+    copy-includes $release_dir
 
     let artifact_base = $"($binary_name)-($version)-($target)"
 
+    output "version" $version
+    output "binary_name" $binary_name
+    output "target" $target
+    output "binary_path" $binary_path
+
     if $create_archive {
-        # Create a tar.gz archive
         let artifact = $"($artifact_base).tar.gz"
         let artifact_path = $"($release_dir)/($artifact)"
         print $"(ansi green)Creating archive:(ansi reset) ($artifact)"
         tar -C $release_dir -czf $artifact_path $binary_name
-        chmod +x $"($release_dir)/($binary_name)"
+        chmod +x $binary_path
+
+        let checksums = generate-checksums $artifact_path
 
         print $"(char nl)(ansi green)Build artifacts:(ansi reset)"
         hr-line
@@ -50,12 +59,19 @@ def main [] {
         print $"(ansi green)Created:(ansi reset) ($artifact)"
         output "artifact" $artifact
         output "artifact_path" $artifact_path
+        output "sha256" $checksums.sha256
+        output "sha512" $checksums.sha512
+        output "b2" $checksums.b2
+
+        let summary = build-summary $binary_name $version $target $artifact $artifact_path $checksums
+        output-multiline "summary" $summary
     } else {
-        # Rename the binary
         let artifact = $artifact_base
         let artifact_path = $"($release_dir)/($artifact)"
-        cp $src $artifact_path
+        cp $binary_path $artifact_path
         chmod +x $artifact_path
+
+        let checksums = generate-checksums $artifact_path
 
         print $"(char nl)(ansi green)Build artifacts:(ansi reset)"
         hr-line
@@ -64,5 +80,11 @@ def main [] {
         print $"(ansi green)Created:(ansi reset) ($artifact)"
         output "artifact" $artifact
         output "artifact_path" $artifact_path
+        output "sha256" $checksums.sha256
+        output "sha512" $checksums.sha512
+        output "b2" $checksums.b2
+
+        let summary = build-summary $binary_name $version $target $artifact $artifact_path $checksums
+        output-multiline "summary" $summary
     }
 }

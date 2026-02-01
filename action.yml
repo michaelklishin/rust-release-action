@@ -64,6 +64,34 @@ inputs:
     required: false
     default: 'false'
 
+  locked:
+    description: 'Build with --locked for reproducible builds'
+    required: false
+    default: 'false'
+
+  features:
+    description: 'Comma-separated list of Cargo features to enable'
+    required: false
+
+  include:
+    description: 'Comma-separated glob patterns for additional files to include in archive'
+    required: false
+
+  checksum:
+    description: 'Checksum algorithms to generate (sha256, sha512, b2)'
+    required: false
+    default: 'sha256'
+
+  profile:
+    description: 'Cargo build profile'
+    required: false
+    default: 'release'
+
+  dry-run:
+    description: 'Build without uploading (for testing)'
+    required: false
+    default: 'false'
+
   working-directory:
     description: 'Working directory for commands'
     required: false
@@ -71,12 +99,16 @@ inputs:
 
 outputs:
   version:
-    description: 'Extracted or validated version'
+    description: 'Version from get-version, validate-version, or release commands'
     value: ${{ steps.run.outputs.version }}
 
   release_notes_file:
     description: 'Path to release notes file'
     value: ${{ steps.run.outputs.release_notes_file }}
+
+  release_notes:
+    description: 'Release notes content'
+    value: ${{ steps.run.outputs.release_notes }}
 
   artifact:
     description: 'Artifact filename'
@@ -86,11 +118,40 @@ outputs:
     description: 'Full path to artifact'
     value: ${{ steps.run.outputs.artifact_path }}
 
+  binary_name:
+    description: 'Binary name that was built'
+    value: ${{ steps.run.outputs.binary_name }}
+
+  binary_path:
+    description: 'Path to the raw binary (before archiving)'
+    value: ${{ steps.run.outputs.binary_path }}
+
+  target:
+    description: 'Target triple used for the build'
+    value: ${{ steps.run.outputs.target }}
+
+  sha256:
+    description: 'SHA256 checksum of the artifact'
+    value: ${{ steps.run.outputs.sha256 }}
+
+  sha512:
+    description: 'SHA512 checksum of the artifact'
+    value: ${{ steps.run.outputs.sha512 }}
+
+  b2:
+    description: 'BLAKE2 checksum of the artifact'
+    value: ${{ steps.run.outputs.b2 }}
+
+  summary:
+    description: 'JSON summary of the build'
+    value: ${{ steps.run.outputs.summary }}
+
 runs:
   using: 'composite'
   steps:
     - name: Setup Nu shell
-      uses: hustcer/setup-nu@56361e0eb7e0e93e97d4925f1ed07d767615f0b1 # v3.17
+      # v3.17
+      uses: hustcer/setup-nu@56361e0eb7e0e93e97d4925f1ed07d767615f0b1
       with:
         version: '0.110.0'
 
@@ -123,8 +184,13 @@ runs:
                 if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
                 if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
                 if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
+                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
                 if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
+                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
+                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
+                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
+                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
                 nu $"($scripts)/release-linux.nu"
             }
             "release-macos" => {
@@ -132,8 +198,13 @@ runs:
                 if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
                 if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
                 if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
+                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
                 if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
+                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
+                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
+                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
+                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
                 nu $"($scripts)/release-macos.nu"
             }
             "release-windows" => {
@@ -141,8 +212,13 @@ runs:
                 if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
                 if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
                 if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
+                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
                 if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
+                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
+                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
+                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
+                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
                 nu $"($scripts)/release-windows.nu"
             }
             "release-windows-msi" => {
@@ -150,7 +226,11 @@ runs:
                 if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
                 if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
                 if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
+                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
                 if "${{ inputs.target-rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.target-rustflags }}" }
+                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
+                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
+                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
                 nu $"($scripts)/release-windows-msi.nu"
             }
             _ => {

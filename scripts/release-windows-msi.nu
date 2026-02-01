@@ -1,8 +1,10 @@
 #!/usr/bin/env nu
 
-use common.nu [get-cargo-info, output, copy-docs, ensure-lockfile, cargo-build, hr-line, error]
+use common.nu [get-cargo-info, output, output-multiline, copy-docs, ensure-lockfile, cargo-build, hr-line, error, check-rust-toolchain, generate-checksums, build-summary]
 
 def main [] {
+    check-rust-toolchain
+
     let target = $env.TARGET? | default "x86_64-pc-windows-msvc"
     let info = get-cargo-info
     let binary_name = $env.BINARY_NAME? | default $info.name
@@ -25,9 +27,9 @@ def main [] {
     rustup target add $target
     cargo-build $target $binary_name
 
-    let src = $"($release_dir)/($binary_name).exe"
-    if not ($src | path exists) {
-        error $"binary not found: ($src)"
+    let binary_path = $"($release_dir)/($binary_name).exe"
+    if not ($binary_path | path exists) {
+        error $"binary not found: ($binary_path)"
     }
 
     copy-docs $release_dir
@@ -35,13 +37,11 @@ def main [] {
     # Copy binaries to target/release for cargo-wix
     cp -r ($"($release_dir)/*" | into glob) target/release/
 
-    # Install cargo-wix if not present
     if (which cargo-wix | is-empty) {
         print $"(ansi yellow)Installing cargo-wix...(ansi reset)"
         cargo install cargo-wix --version 0.3.8
     }
 
-    # Build MSI package
     let msi_path = $"target/wix/($binary_name)-($version)-($target).msi"
     print $"(ansi green)Creating MSI package...(ansi reset)"
     cargo wix --no-build --nocapture --package $binary_name --output $msi_path
@@ -50,7 +50,8 @@ def main [] {
         error $"MSI not created: ($msi_path)"
     }
 
-    # Normalise path separators for GitHub Actions
+    let checksums = generate-checksums $msi_path
+
     let artifact_path = $msi_path | str replace --all '\' '/'
     let artifact = $artifact_path | path basename
 
@@ -59,6 +60,16 @@ def main [] {
     ls target/wix | print
 
     print $"(ansi green)Created:(ansi reset) ($artifact)"
+    output "version" $version
+    output "binary_name" $binary_name
+    output "target" $target
+    output "binary_path" ($binary_path | str replace --all '\' '/')
     output "artifact" $artifact
     output "artifact_path" $artifact_path
+    output "sha256" $checksums.sha256
+    output "sha512" $checksums.sha512
+    output "b2" $checksums.b2
+
+    let summary = build-summary $binary_name $version $target $artifact $artifact_path $checksums
+    output-multiline "summary" $summary
 }

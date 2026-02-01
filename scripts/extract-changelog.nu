@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-use common.nu [output, error]
+use common.nu [output, output-multiline, error]
 
 def main [] {
     let version = $env.VERSION? | default ""
@@ -32,7 +32,6 @@ def main [] {
         $row.item =~ '^## v?\d+\.\d+\.\d+'
     } | get -o 0.index | default ($remaining | length)
 
-    # Include the header line in the output
     let section = $lines | skip $start_idx | take ($end_offset + 1)
     let notes = $section | str join "\n"
 
@@ -42,5 +41,7 @@ def main [] {
 
     $notes | save -f $output_path
     print $"(ansi green)Extracted(ansi reset) release notes for v($version) to ($output_path)"
+    output "version" $version
     output "release_notes_file" $output_path
+    output-multiline "release_notes" $notes
 }

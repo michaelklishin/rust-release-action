@@ -24,13 +24,14 @@ Set required environment variables before running scripts.
 ## Key Files
 
  * `action.yml`: GitHub Action definition
- * `scripts/common.nu`: shared utilities (`get-cargo-info`, `output`, `copy-docs`)
+ * `scripts/common.nu`: shared utilities (`get-cargo-info`, `output`, `copy-docs`, `generate-checksums`, `build-summary`)
  * `scripts/extract-changelog.nu`: extracts release details from a change log file (see `rabbitmqadmin-ng` for example)
- * `scripts/validate-version.nu`: version validation logic
+ * `scripts/validate-version.nu`: version validation logic, including pre-release versions
  * `scripts/get-version.nu`: reads version from `Cargo.toml`
  * `scripts/release-linux.nu`: Linux build script
  * `scripts/release-macos.nu`: ditto for macOS
  * `scripts/release-windows.nu`: ditto for Windows
+ * `scripts/release-windows-msi.nu`: Windows MSI installer via cargo-wix
 
 ## Nu Script Style
 
