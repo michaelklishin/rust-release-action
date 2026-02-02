@@ -8,7 +8,7 @@
  * Improve AUR error messages, fallback to `binary-name` input
  * Fix empty table handling in `format-release.nu`
  * Fix filesize to int conversion in `format-size`
- * Add sync and retry logic for DMG creation (fixes "Resource busy" errors)
+ * Add retries to the DMG creation step to work around certain "resource busy" errors on macOS runners
 
 ## v1.13.0 (Feb 2, 2026)
 
