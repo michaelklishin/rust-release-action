@@ -109,12 +109,10 @@ def generate-nfpm-config [
     let priority = $env.PKG_PRIORITY? | default "optional"
 
     mut config = nfpm-base-config $binary_name $version $arch
+    # section and priority are top-level nfpm fields, not nested under deb:
+    $config = $config + $"section: \"($section)\"\n"
+    $config = $config + $"priority: \"($priority)\"\n"
     $config = $config + (nfpm-contents-section $binary_name $binary_path)
-    $config = $config + $"
-deb:
-  section: \"($section)\"
-  priority: \"($priority)\"
-"
     $config = $config + (nfpm-dependencies-section)
     $config
 }

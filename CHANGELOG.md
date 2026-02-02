@@ -5,6 +5,7 @@
 ### Bug Fixes
 
  * Use direct `$env.VAR` assignment instead of `load-env` to propagate variables to subprocesses
+ * Fix nfpm config: `section` and `priority` are top-level fields, not nested under `deb:`
 
 ## v1.2.0 (Feb 1, 2026)
 
