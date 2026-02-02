@@ -59,7 +59,7 @@ def main [] {
 
 # Gets cosign path, installing if missing
 def get-cosign-path []: nothing -> string {
-    let existing = which cosign | get -i 0.path
+    let existing = which cosign | get -o 0.path
     if $existing != null {
         return $existing
     }
