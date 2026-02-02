@@ -1,8 +1,10 @@
 # Changelog
 
-## v1.8.0
+## v1.8.0 (Feb 1, 2026)
 
-(no changes yet)
+### Bug Fixes
+
+ * Fix `cosign` 3.x signing (auto-detect GitHub Actions environment)
 
 ## v1.7.0 (Feb 1, 2026)
 

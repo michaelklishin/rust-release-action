@@ -14,34 +14,22 @@ def main [] {
         error $"artifact not found: ($artifact_path)"
     }
 
-    let identity_token = $env.SIGSTORE_ID_TOKEN? | default ""
-    let oidc_issuer = $env.SIGSTORE_OIDC_ISSUER? | default "https://token.actions.githubusercontent.com"
-    let oidc_provider = $env.SIGSTORE_OIDC_PROVIDER? | default "github-actions"
-
     print $"(ansi green)Signing artifact:(ansi reset) ($artifact_path)"
 
     let sig_path = $"($artifact_path).sig"
     let cert_path = $"($artifact_path).pem"
     let bundle_path = $"($artifact_path).sigstore.json"
 
-    # Build cosign args
-    mut args = ["sign-blob" "--yes"]
-
-    if $identity_token != "" {
-        $args = ($args | append ["--identity-token" $identity_token])
-    } else {
-        $args = ($args | append ["--oidc-issuer" $oidc_issuer "--oidc-provider" $oidc_provider])
-    }
-
-    $args = ($args | append [
+    # Build cosign args - cosign 3.x auto-detects GitHub Actions environment
+    let args = [
+        "sign-blob" "--yes"
         "--output-signature" $sig_path
         "--output-certificate" $cert_path
         "--bundle" $bundle_path
         $artifact_path
-    ])
+    ]
 
-    let final_args = $args
-    let result = do { cosign ...$final_args } | complete
+    let result = do { cosign ...$args } | complete
     if $result.exit_code != 0 {
         print $"(ansi red)cosign output:(ansi reset)"
         print $result.stderr
