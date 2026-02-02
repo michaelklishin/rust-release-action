@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.13.0 (Feb 2, 2026)
+
+### Bug Fixes
+
+ * Fix regex escaping in `collect-artifacts.nu`
+
 ## v1.12.0 (Feb 1, 2026)
 
 ### Bug Fixes
