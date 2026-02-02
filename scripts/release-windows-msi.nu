@@ -12,6 +12,7 @@ def main [] {
 
     let target = $env.TARGET? | default "x86_64-pc-windows-msvc"
     let info = get-cargo-info
+    let package_name = $env.PACKAGE? | default $info.name
     let binary_name = $env.BINARY_NAME? | default $info.name
     let version = $info.version
 
@@ -62,7 +63,7 @@ def main [] {
 
     let msi_path = $"target/wix/($binary_name)-($version)-($target).msi"
     print $"(ansi green)Creating MSI package...(ansi reset)"
-    cargo wix --no-build --nocapture --package $binary_name --output $msi_path
+    cargo wix --no-build --nocapture --package $package_name --output $msi_path
 
     if not ($msi_path | path exists) {
         error $"MSI not created: ($msi_path)"

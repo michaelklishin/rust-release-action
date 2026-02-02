@@ -1,8 +1,10 @@
 # Changelog
 
-## v1.10.0
+## v1.10.0 (Feb 1, 2026)
 
-(no changes yet)
+### Bug Fixes
+
+ * Use Cargo package name (not binary name) for `cargo-wix --package`
 
 ## v1.9.0 (Feb 1, 2026)
 
