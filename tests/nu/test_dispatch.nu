@@ -4,10 +4,15 @@
 
 use std/assert
 
+# Cross-platform temp directory
+def temp-dir [] {
+    $env.TEMP? | default ($env.TMPDIR? | default "/tmp")
+}
+
 # Test that dispatch.nu correctly propagates INPUT_* env vars to child scripts
 #[test]
 def "test dispatch get-version" [] {
-    let test_toml = "/tmp/test-dispatch-cargo.toml"
+    let test_toml = (temp-dir | path join "test-dispatch-cargo.toml")
     "[package]\nname = \"dispatch-test\"\nversion = \"5.6.7\"" | save -f $test_toml
 
     let scripts_dir = $env.FILE_PWD | path dirname | path dirname | path join "scripts"
@@ -29,7 +34,7 @@ def "test dispatch get-version" [] {
 # Test that VERSION env var is set correctly from INPUT_VERSION
 #[test]
 def "test dispatch version passthrough" [] {
-    let test_toml = "/tmp/test-dispatch-version.toml"
+    let test_toml = (temp-dir | path join "test-dispatch-version.toml")
     "[package]\nname = \"version-test\"\nversion = \"1.0.0\"" | save -f $test_toml
 
     let scripts_dir = $env.FILE_PWD | path dirname | path dirname | path join "scripts"

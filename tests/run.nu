@@ -14,7 +14,8 @@ def main [] {
     print $"(ansi green_bold)Running tests...(ansi reset)"
     print ""
 
-    let glob_pattern = [$test_dir, "nu", "*.nu"] | str join "/"
+    # Use forward slashes for glob (required even on Windows)
+    let glob_pattern = [$test_dir, "nu", "*.nu"] | str join "/" | str replace --all '\\' '/'
     let test_files = glob $glob_pattern
     let results = $test_files | each {|file|
         let name = $file | path basename
