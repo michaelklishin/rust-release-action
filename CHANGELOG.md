@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.10.0
+
+(no changes yet)
+
 ## v1.9.0 (Feb 1, 2026)
 
 ### Bug Fixes
