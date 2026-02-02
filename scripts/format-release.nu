@@ -202,10 +202,11 @@ def format-artifacts-table [artifacts: table]: nothing -> string {
 # Collects all checksum file contents
 def collect-checksums [dir: string]: nothing -> string {
     let checksum_pattern = '.sha256$|.sha512$|.b2$'
-    let checksum_files = ls $dir | where { |f| $f.name =~ $checksum_pattern } | get name
+    let checksum_files = ls $dir | where { |f| $f.name =~ $checksum_pattern }
     if ($checksum_files | is-empty) {
         return ""
     }
+    let checksum_files = $checksum_files | get name
 
     mut checksums = ""
     for file in $checksum_files {
