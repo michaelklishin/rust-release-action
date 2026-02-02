@@ -37,6 +37,16 @@ inputs:
   # ─────────────────────────────────────────────────────────────────────────────
   # Build options - standard Cargo build flags
   # ─────────────────────────────────────────────────────────────────────────────
+  pre-build:
+    description: 'Shell command to run before cargo build (e.g., frontend build step)'
+    required: false
+  skip-build:
+    description: 'Skip cargo build and use existing binary (for container/Alpine workflows)'
+    required: false
+    default: 'false'
+  binary-path:
+    description: 'Path to existing binary when skip-build is true'
+    required: false
   features:
     description: 'Cargo features to enable (comma-separated)'
     required: false
@@ -92,6 +102,10 @@ inputs:
   expected-version:
     description: 'Expected version (defaults to NEXT_RELEASE_VERSION variable)'
     required: false
+  validate-cargo-toml:
+    description: 'Also validate that Cargo.toml version matches the tag'
+    required: false
+    default: 'false'
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Package metadata (pkg-*) - shared across deb/rpm/apk/brew/aur/winget
@@ -203,6 +217,13 @@ inputs:
     required: false
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # Artifact collection options - for collect-artifacts command
+  # ─────────────────────────────────────────────────────────────────────────────
+  base-url:
+    description: 'Base URL for artifact downloads (e.g., https://github.com/user/repo/releases/download/v1.0.0)'
+    required: false
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # Release body options - for format-release command
   # ─────────────────────────────────────────────────────────────────────────────
   artifacts-dir:
@@ -221,6 +242,15 @@ inputs:
     description: 'Include signatures section in release body'
     required: false
     default: 'true'
+  homebrew-tap:
+    description: 'Homebrew tap for installation instructions (e.g., user/tap/formula)'
+    required: false
+  aur-package:
+    description: 'AUR package name for installation instructions'
+    required: false
+  winget-id:
+    description: 'Winget package ID for installation instructions'
+    required: false
 
   # ─────────────────────────────────────────────────────────────────────────────
   # AUR options (aur-*) - for generate-aur command
@@ -301,12 +331,20 @@ outputs:
     value: ${{ steps.run.outputs.release_notes }}
 
   artifact:
-    description: 'Artifact filename'
+    description: 'Artifact filename (archive when archive=true, bare binary otherwise)'
     value: ${{ steps.run.outputs.artifact }}
 
   artifact_path:
-    description: 'Full path to artifact'
+    description: 'Full path to artifact (archive when archive=true, bare binary otherwise)'
     value: ${{ steps.run.outputs.artifact_path }}
+
+  bare_artifact:
+    description: 'Bare binary filename (always produced)'
+    value: ${{ steps.run.outputs.bare_artifact }}
+
+  bare_artifact_path:
+    description: 'Full path to bare binary (always produced)'
+    value: ${{ steps.run.outputs.bare_artifact_path }}
 
   binary_name:
     description: 'Binary name that was built'
@@ -392,6 +430,39 @@ outputs:
     description: 'Winget manifest ID'
     value: ${{ steps.run.outputs.manifest_id }}
 
+  # collect-artifacts outputs
+  collection:
+    description: 'JSON collection of artifacts with checksums and URLs'
+    value: ${{ steps.run.outputs.collection }}
+
+  checksums_file:
+    description: 'Path to consolidated SHA256SUMS file'
+    value: ${{ steps.run.outputs.checksums_file }}
+
+  macos_arm64_sha256:
+    description: 'SHA256 of macOS ARM64 artifact'
+    value: ${{ steps.run.outputs.macos_arm64_sha256 }}
+
+  macos_x64_sha256:
+    description: 'SHA256 of macOS x64 artifact'
+    value: ${{ steps.run.outputs.macos_x64_sha256 }}
+
+  linux_arm64_sha256:
+    description: 'SHA256 of Linux ARM64 artifact'
+    value: ${{ steps.run.outputs.linux_arm64_sha256 }}
+
+  linux_x64_sha256:
+    description: 'SHA256 of Linux x64 artifact'
+    value: ${{ steps.run.outputs.linux_x64_sha256 }}
+
+  windows_x64_sha256:
+    description: 'SHA256 of Windows x64 artifact'
+    value: ${{ steps.run.outputs.windows_x64_sha256 }}
+
+  windows_arm64_sha256:
+    description: 'SHA256 of Windows ARM64 artifact'
+    value: ${{ steps.run.outputs.windows_arm64_sha256 }}
+
 runs:
   using: 'composite'
   steps:
@@ -406,247 +477,86 @@ runs:
       shell: nu {0}
       working-directory: ${{ inputs.working-directory }}
       run: |
-        let scripts = $"($env.GITHUB_ACTION_PATH)/scripts"
-        $env.NU_LIB_DIRS = [$scripts]
-
-        match $"${{ inputs.command }}" {
-            "extract-changelog" => {
-                $env.VERSION = $"${{ inputs.version }}"
-                $env.CHANGELOG_PATH = $"${{ inputs.changelog }}"
-                $env.OUTPUT_PATH = $"${{ inputs.notes-output }}"
-                nu $"($scripts)/extract-changelog.nu"
-            }
-            "validate-version" => {
-                $env.TAG = if "${{ inputs.tag }}" != "" { "${{ inputs.tag }}" } else { $env.GITHUB_REF_NAME? | default "" }
-                $env.EXPECTED_VERSION = if "${{ inputs.expected-version }}" != "" { "${{ inputs.expected-version }}" } else { $env.NEXT_RELEASE_VERSION? | default "" }
-                nu $"($scripts)/validate-version.nu"
-            }
-            "get-version" => {
-                $env.MANIFEST_PATH = $"${{ inputs.manifest }}"
-                nu $"($scripts)/get-version.nu"
-            }
-            "generate-sbom" => {
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.sbom-format }}" != "" { $env.SBOM_FORMAT = "${{ inputs.sbom-format }}" }
-                if "${{ inputs.sbom-dir }}" != "" { $env.SBOM_OUTPUT_DIR = "${{ inputs.sbom-dir }}" }
-                nu $"($scripts)/generate-sbom.nu"
-            }
-            "generate-homebrew" => {
-                if "${{ inputs.version }}" != "" { $env.VERSION = "${{ inputs.version }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.pkg-description }}" != "" { $env.PKG_DESCRIPTION = "${{ inputs.pkg-description }}" }
-                if "${{ inputs.pkg-homepage }}" != "" { $env.PKG_HOMEPAGE = "${{ inputs.pkg-homepage }}" }
-                if "${{ inputs.pkg-license }}" != "" { $env.PKG_LICENSE = "${{ inputs.pkg-license }}" }
-                if "${{ inputs.brew-class }}" != "" { $env.HOMEBREW_FORMULA_CLASS = "${{ inputs.brew-class }}" }
-                if "${{ inputs.brew-macos-arm64-url }}" != "" { $env.HOMEBREW_MACOS_ARM64_URL = "${{ inputs.brew-macos-arm64-url }}" }
-                if "${{ inputs.brew-macos-arm64-sha256 }}" != "" { $env.HOMEBREW_MACOS_ARM64_SHA256 = "${{ inputs.brew-macos-arm64-sha256 }}" }
-                if "${{ inputs.brew-macos-x64-url }}" != "" { $env.HOMEBREW_MACOS_X64_URL = "${{ inputs.brew-macos-x64-url }}" }
-                if "${{ inputs.brew-macos-x64-sha256 }}" != "" { $env.HOMEBREW_MACOS_X64_SHA256 = "${{ inputs.brew-macos-x64-sha256 }}" }
-                if "${{ inputs.brew-linux-arm64-url }}" != "" { $env.HOMEBREW_LINUX_ARM64_URL = "${{ inputs.brew-linux-arm64-url }}" }
-                if "${{ inputs.brew-linux-arm64-sha256 }}" != "" { $env.HOMEBREW_LINUX_ARM64_SHA256 = "${{ inputs.brew-linux-arm64-sha256 }}" }
-                if "${{ inputs.brew-linux-x64-url }}" != "" { $env.HOMEBREW_LINUX_X64_URL = "${{ inputs.brew-linux-x64-url }}" }
-                if "${{ inputs.brew-linux-x64-sha256 }}" != "" { $env.HOMEBREW_LINUX_X64_SHA256 = "${{ inputs.brew-linux-x64-sha256 }}" }
-                if "${{ inputs.brew-dir }}" != "" { $env.HOMEBREW_OUTPUT_DIR = "${{ inputs.brew-dir }}" }
-                nu $"($scripts)/generate-homebrew.nu"
-            }
-            "generate-aur" => {
-                if "${{ inputs.version }}" != "" { $env.VERSION = "${{ inputs.version }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.aur-name }}" != "" { $env.AUR_PACKAGE_NAME = "${{ inputs.aur-name }}" }
-                if "${{ inputs.aur-maintainer }}" != "" { $env.AUR_MAINTAINER = "${{ inputs.aur-maintainer }}" }
-                if "${{ inputs.aur-source-url }}" != "" { $env.AUR_SOURCE_URL = "${{ inputs.aur-source-url }}" }
-                if "${{ inputs.aur-source-sha256 }}" != "" { $env.AUR_SOURCE_SHA256 = "${{ inputs.aur-source-sha256 }}" }
-                if "${{ inputs.aur-makedepends }}" != "" { $env.AUR_MAKEDEPENDS = "${{ inputs.aur-makedepends }}" }
-                if "${{ inputs.aur-optdepends }}" != "" { $env.AUR_OPTDEPENDS = "${{ inputs.aur-optdepends }}" }
-                if "${{ inputs.aur-dir }}" != "" { $env.AUR_OUTPUT_DIR = "${{ inputs.aur-dir }}" }
-                if "${{ inputs.pkg-description }}" != "" { $env.PKG_DESCRIPTION = "${{ inputs.pkg-description }}" }
-                if "${{ inputs.pkg-homepage }}" != "" { $env.PKG_HOMEPAGE = "${{ inputs.pkg-homepage }}" }
-                if "${{ inputs.pkg-license }}" != "" { $env.PKG_LICENSE = "${{ inputs.pkg-license }}" }
-                if "${{ inputs.pkg-depends }}" != "" { $env.PKG_DEPENDS = "${{ inputs.pkg-depends }}" }
-                if "${{ inputs.pkg-provides }}" != "" { $env.PKG_PROVIDES = "${{ inputs.pkg-provides }}" }
-                if "${{ inputs.pkg-conflicts }}" != "" { $env.PKG_CONFLICTS = "${{ inputs.pkg-conflicts }}" }
-                nu $"($scripts)/generate-aur.nu"
-            }
-            "generate-winget" => {
-                if "${{ inputs.version }}" != "" { $env.VERSION = "${{ inputs.version }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.winget-publisher }}" != "" { $env.WINGET_PUBLISHER = "${{ inputs.winget-publisher }}" }
-                if "${{ inputs.winget-publisher-id }}" != "" { $env.WINGET_PUBLISHER_ID = "${{ inputs.winget-publisher-id }}" }
-                if "${{ inputs.winget-package-id }}" != "" { $env.WINGET_PACKAGE_ID = "${{ inputs.winget-package-id }}" }
-                if "${{ inputs.winget-license-url }}" != "" { $env.WINGET_LICENSE_URL = "${{ inputs.winget-license-url }}" }
-                if "${{ inputs.winget-copyright }}" != "" { $env.WINGET_COPYRIGHT = "${{ inputs.winget-copyright }}" }
-                if "${{ inputs.winget-tags }}" != "" { $env.WINGET_TAGS = "${{ inputs.winget-tags }}" }
-                if "${{ inputs.winget-x64-url }}" != "" { $env.WINGET_X64_URL = "${{ inputs.winget-x64-url }}" }
-                if "${{ inputs.winget-x64-sha256 }}" != "" { $env.WINGET_X64_SHA256 = "${{ inputs.winget-x64-sha256 }}" }
-                if "${{ inputs.winget-arm64-url }}" != "" { $env.WINGET_ARM64_URL = "${{ inputs.winget-arm64-url }}" }
-                if "${{ inputs.winget-arm64-sha256 }}" != "" { $env.WINGET_ARM64_SHA256 = "${{ inputs.winget-arm64-sha256 }}" }
-                if "${{ inputs.winget-dir }}" != "" { $env.WINGET_OUTPUT_DIR = "${{ inputs.winget-dir }}" }
-                if "${{ inputs.pkg-description }}" != "" { $env.PKG_DESCRIPTION = "${{ inputs.pkg-description }}" }
-                if "${{ inputs.pkg-homepage }}" != "" { $env.PKG_HOMEPAGE = "${{ inputs.pkg-homepage }}" }
-                if "${{ inputs.pkg-license }}" != "" { $env.PKG_LICENSE = "${{ inputs.pkg-license }}" }
-                nu $"($scripts)/generate-winget.nu"
-            }
-            "sign-artifact" => {
-                if "${{ inputs.artifact }}" != "" { $env.ARTIFACT_PATH = "${{ inputs.artifact }}" }
-                nu $"($scripts)/sign-artifact.nu"
-            }
-            "format-release" => {
-                if "${{ inputs.version }}" != "" { $env.VERSION = "${{ inputs.version }}" }
-                if "${{ inputs.artifacts-dir }}" != "" { $env.ARTIFACTS_DIR = "${{ inputs.artifacts-dir }}" }
-                if "${{ inputs.notes-file }}" != "" { $env.RELEASE_NOTES_FILE = "${{ inputs.notes-file }}" }
-                if "${{ inputs.include-checksums }}" != "" { $env.INCLUDE_CHECKSUMS = "${{ inputs.include-checksums }}" }
-                if "${{ inputs.include-signatures }}" != "" { $env.INCLUDE_SIGNATURES = "${{ inputs.include-signatures }}" }
-                nu $"($scripts)/format-release.nu"
-            }
-            "release-linux" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                nu $"($scripts)/release-linux.nu"
-            }
-            "release-linux-deb" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                if "${{ inputs.pkg-description }}" != "" { $env.PKG_DESCRIPTION = "${{ inputs.pkg-description }}" }
-                if "${{ inputs.pkg-maintainer }}" != "" { $env.PKG_MAINTAINER = "${{ inputs.pkg-maintainer }}" }
-                if "${{ inputs.pkg-homepage }}" != "" { $env.PKG_HOMEPAGE = "${{ inputs.pkg-homepage }}" }
-                if "${{ inputs.pkg-license }}" != "" { $env.PKG_LICENSE = "${{ inputs.pkg-license }}" }
-                if "${{ inputs.pkg-vendor }}" != "" { $env.PKG_VENDOR = "${{ inputs.pkg-vendor }}" }
-                if "${{ inputs.pkg-section }}" != "" { $env.PKG_SECTION = "${{ inputs.pkg-section }}" }
-                if "${{ inputs.pkg-priority }}" != "" { $env.PKG_PRIORITY = "${{ inputs.pkg-priority }}" }
-                if "${{ inputs.pkg-depends }}" != "" { $env.PKG_DEPENDS = "${{ inputs.pkg-depends }}" }
-                if "${{ inputs.pkg-recommends }}" != "" { $env.PKG_RECOMMENDS = "${{ inputs.pkg-recommends }}" }
-                if "${{ inputs.pkg-suggests }}" != "" { $env.PKG_SUGGESTS = "${{ inputs.pkg-suggests }}" }
-                if "${{ inputs.pkg-conflicts }}" != "" { $env.PKG_CONFLICTS = "${{ inputs.pkg-conflicts }}" }
-                if "${{ inputs.pkg-replaces }}" != "" { $env.PKG_REPLACES = "${{ inputs.pkg-replaces }}" }
-                if "${{ inputs.pkg-provides }}" != "" { $env.PKG_PROVIDES = "${{ inputs.pkg-provides }}" }
-                if "${{ inputs.pkg-contents }}" != "" { $env.PKG_CONTENTS = "${{ inputs.pkg-contents }}" }
-                nu $"($scripts)/release-linux-deb.nu"
-            }
-            "release-linux-rpm" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                if "${{ inputs.pkg-description }}" != "" { $env.PKG_DESCRIPTION = "${{ inputs.pkg-description }}" }
-                if "${{ inputs.pkg-maintainer }}" != "" { $env.PKG_MAINTAINER = "${{ inputs.pkg-maintainer }}" }
-                if "${{ inputs.pkg-homepage }}" != "" { $env.PKG_HOMEPAGE = "${{ inputs.pkg-homepage }}" }
-                if "${{ inputs.pkg-license }}" != "" { $env.PKG_LICENSE = "${{ inputs.pkg-license }}" }
-                if "${{ inputs.pkg-vendor }}" != "" { $env.PKG_VENDOR = "${{ inputs.pkg-vendor }}" }
-                if "${{ inputs.pkg-group }}" != "" { $env.PKG_GROUP = "${{ inputs.pkg-group }}" }
-                if "${{ inputs.pkg-release }}" != "" { $env.PKG_RELEASE = "${{ inputs.pkg-release }}" }
-                if "${{ inputs.pkg-depends }}" != "" { $env.PKG_DEPENDS = "${{ inputs.pkg-depends }}" }
-                if "${{ inputs.pkg-recommends }}" != "" { $env.PKG_RECOMMENDS = "${{ inputs.pkg-recommends }}" }
-                if "${{ inputs.pkg-suggests }}" != "" { $env.PKG_SUGGESTS = "${{ inputs.pkg-suggests }}" }
-                if "${{ inputs.pkg-conflicts }}" != "" { $env.PKG_CONFLICTS = "${{ inputs.pkg-conflicts }}" }
-                if "${{ inputs.pkg-replaces }}" != "" { $env.PKG_REPLACES = "${{ inputs.pkg-replaces }}" }
-                if "${{ inputs.pkg-provides }}" != "" { $env.PKG_PROVIDES = "${{ inputs.pkg-provides }}" }
-                if "${{ inputs.pkg-contents }}" != "" { $env.PKG_CONTENTS = "${{ inputs.pkg-contents }}" }
-                nu $"($scripts)/release-linux-rpm.nu"
-            }
-            "release-linux-apk" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                if "${{ inputs.pkg-description }}" != "" { $env.PKG_DESCRIPTION = "${{ inputs.pkg-description }}" }
-                if "${{ inputs.pkg-maintainer }}" != "" { $env.PKG_MAINTAINER = "${{ inputs.pkg-maintainer }}" }
-                if "${{ inputs.pkg-homepage }}" != "" { $env.PKG_HOMEPAGE = "${{ inputs.pkg-homepage }}" }
-                if "${{ inputs.pkg-license }}" != "" { $env.PKG_LICENSE = "${{ inputs.pkg-license }}" }
-                if "${{ inputs.pkg-vendor }}" != "" { $env.PKG_VENDOR = "${{ inputs.pkg-vendor }}" }
-                if "${{ inputs.pkg-release }}" != "" { $env.PKG_RELEASE = "${{ inputs.pkg-release }}" }
-                if "${{ inputs.pkg-depends }}" != "" { $env.PKG_DEPENDS = "${{ inputs.pkg-depends }}" }
-                if "${{ inputs.pkg-conflicts }}" != "" { $env.PKG_CONFLICTS = "${{ inputs.pkg-conflicts }}" }
-                if "${{ inputs.pkg-replaces }}" != "" { $env.PKG_REPLACES = "${{ inputs.pkg-replaces }}" }
-                if "${{ inputs.pkg-provides }}" != "" { $env.PKG_PROVIDES = "${{ inputs.pkg-provides }}" }
-                if "${{ inputs.pkg-contents }}" != "" { $env.PKG_CONTENTS = "${{ inputs.pkg-contents }}" }
-                nu $"($scripts)/release-linux-apk.nu"
-            }
-            "release-macos" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                nu $"($scripts)/release-macos.nu"
-            }
-            "release-macos-dmg" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                nu $"($scripts)/release-macos-dmg.nu"
-            }
-            "release-windows" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.archive }}" == "true" { $env.ARCHIVE = "true" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                nu $"($scripts)/release-windows.nu"
-            }
-            "release-windows-msi" => {
-                if "${{ inputs.target }}" != "" { $env.TARGET = "${{ inputs.target }}" }
-                if "${{ inputs.binary-name }}" != "" { $env.BINARY_NAME = "${{ inputs.binary-name }}" }
-                if "${{ inputs.package }}" != "" { $env.PACKAGE = "${{ inputs.package }}" }
-                if "${{ inputs.no-default-features }}" == "true" { $env.NO_DEFAULT_FEATURES = "true" }
-                if "${{ inputs.features }}" != "" { $env.FEATURES = "${{ inputs.features }}" }
-                if "${{ inputs.rustflags }}" != "" { $env.TARGET_RUSTFLAGS = "${{ inputs.rustflags }}" }
-                if "${{ inputs.locked }}" == "true" { $env.LOCKED = "true" }
-                if "${{ inputs.include }}" != "" { $env.INCLUDE = "${{ inputs.include }}" }
-                if "${{ inputs.checksum }}" != "" { $env.CHECKSUM = "${{ inputs.checksum }}" }
-                if "${{ inputs.profile }}" != "" { $env.PROFILE = "${{ inputs.profile }}" }
-                nu $"($scripts)/release-windows-msi.nu"
-            }
-            _ => {
-                print $"(ansi red)ERROR:(ansi reset) unknown command '${{ inputs.command }}'"
-                exit 1
-            }
-        }
+        $env.NU_LIB_DIRS = [$"($env.GITHUB_ACTION_PATH)/scripts"]
+        nu $"($env.GITHUB_ACTION_PATH)/scripts/dispatch.nu"
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
         NEXT_RELEASE_VERSION: ${{ vars.NEXT_RELEASE_VERSION }}
+        # All inputs passed as INPUT_* environment variables
+        INPUT_COMMAND: ${{ inputs.command }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_TARGET: ${{ inputs.target }}
+        INPUT_BINARY_NAME: ${{ inputs.binary-name }}
+        INPUT_PACKAGE: ${{ inputs.package }}
+        INPUT_MANIFEST: ${{ inputs.manifest }}
+        INPUT_PRE_BUILD: ${{ inputs.pre-build }}
+        INPUT_SKIP_BUILD: ${{ inputs.skip-build }}
+        INPUT_BINARY_PATH: ${{ inputs.binary-path }}
+        INPUT_FEATURES: ${{ inputs.features }}
+        INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_LOCKED: ${{ inputs.locked }}
+        INPUT_NO_DEFAULT_FEATURES: ${{ inputs.no-default-features }}
+        INPUT_RUSTFLAGS: ${{ inputs.rustflags }}
+        INPUT_ARCHIVE: ${{ inputs.archive }}
+        INPUT_CHECKSUM: ${{ inputs.checksum }}
+        INPUT_INCLUDE: ${{ inputs.include }}
+        INPUT_CHANGELOG: ${{ inputs.changelog }}
+        INPUT_NOTES_OUTPUT: ${{ inputs.notes-output }}
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_EXPECTED_VERSION: ${{ inputs.expected-version }}
+        INPUT_VALIDATE_CARGO_TOML: ${{ inputs.validate-cargo-toml }}
+        INPUT_PKG_DESCRIPTION: ${{ inputs.pkg-description }}
+        INPUT_PKG_MAINTAINER: ${{ inputs.pkg-maintainer }}
+        INPUT_PKG_HOMEPAGE: ${{ inputs.pkg-homepage }}
+        INPUT_PKG_LICENSE: ${{ inputs.pkg-license }}
+        INPUT_PKG_VENDOR: ${{ inputs.pkg-vendor }}
+        INPUT_PKG_DEPENDS: ${{ inputs.pkg-depends }}
+        INPUT_PKG_RECOMMENDS: ${{ inputs.pkg-recommends }}
+        INPUT_PKG_SUGGESTS: ${{ inputs.pkg-suggests }}
+        INPUT_PKG_CONFLICTS: ${{ inputs.pkg-conflicts }}
+        INPUT_PKG_REPLACES: ${{ inputs.pkg-replaces }}
+        INPUT_PKG_PROVIDES: ${{ inputs.pkg-provides }}
+        INPUT_PKG_CONTENTS: ${{ inputs.pkg-contents }}
+        INPUT_PKG_SECTION: ${{ inputs.pkg-section }}
+        INPUT_PKG_PRIORITY: ${{ inputs.pkg-priority }}
+        INPUT_PKG_GROUP: ${{ inputs.pkg-group }}
+        INPUT_PKG_RELEASE: ${{ inputs.pkg-release }}
+        INPUT_SBOM_FORMAT: ${{ inputs.sbom-format }}
+        INPUT_SBOM_DIR: ${{ inputs.sbom-dir }}
+        INPUT_BREW_CLASS: ${{ inputs.brew-class }}
+        INPUT_BREW_MACOS_ARM64_URL: ${{ inputs.brew-macos-arm64-url }}
+        INPUT_BREW_MACOS_ARM64_SHA256: ${{ inputs.brew-macos-arm64-sha256 }}
+        INPUT_BREW_MACOS_X64_URL: ${{ inputs.brew-macos-x64-url }}
+        INPUT_BREW_MACOS_X64_SHA256: ${{ inputs.brew-macos-x64-sha256 }}
+        INPUT_BREW_LINUX_ARM64_URL: ${{ inputs.brew-linux-arm64-url }}
+        INPUT_BREW_LINUX_ARM64_SHA256: ${{ inputs.brew-linux-arm64-sha256 }}
+        INPUT_BREW_LINUX_X64_URL: ${{ inputs.brew-linux-x64-url }}
+        INPUT_BREW_LINUX_X64_SHA256: ${{ inputs.brew-linux-x64-sha256 }}
+        INPUT_BREW_DIR: ${{ inputs.brew-dir }}
+        INPUT_ARTIFACT: ${{ inputs.artifact }}
+        INPUT_ARTIFACTS_DIR: ${{ inputs.artifacts-dir }}
+        INPUT_BASE_URL: ${{ inputs.base-url }}
+        INPUT_NOTES_FILE: ${{ inputs.notes-file }}
+        INPUT_INCLUDE_CHECKSUMS: ${{ inputs.include-checksums }}
+        INPUT_INCLUDE_SIGNATURES: ${{ inputs.include-signatures }}
+        INPUT_HOMEBREW_TAP: ${{ inputs.homebrew-tap }}
+        INPUT_AUR_PACKAGE: ${{ inputs.aur-package }}
+        INPUT_WINGET_ID: ${{ inputs.winget-id }}
+        INPUT_AUR_NAME: ${{ inputs.aur-name }}
+        INPUT_AUR_MAINTAINER: ${{ inputs.aur-maintainer }}
+        INPUT_AUR_SOURCE_URL: ${{ inputs.aur-source-url }}
+        INPUT_AUR_SOURCE_SHA256: ${{ inputs.aur-source-sha256 }}
+        INPUT_AUR_MAKEDEPENDS: ${{ inputs.aur-makedepends }}
+        INPUT_AUR_OPTDEPENDS: ${{ inputs.aur-optdepends }}
+        INPUT_AUR_DIR: ${{ inputs.aur-dir }}
+        INPUT_WINGET_PUBLISHER: ${{ inputs.winget-publisher }}
+        INPUT_WINGET_PUBLISHER_ID: ${{ inputs.winget-publisher-id }}
+        INPUT_WINGET_PACKAGE_ID: ${{ inputs.winget-package-id }}
+        INPUT_WINGET_LICENSE_URL: ${{ inputs.winget-license-url }}
+        INPUT_WINGET_COPYRIGHT: ${{ inputs.winget-copyright }}
+        INPUT_WINGET_TAGS: ${{ inputs.winget-tags }}
+        INPUT_WINGET_X64_URL: ${{ inputs.winget-x64-url }}
+        INPUT_WINGET_X64_SHA256: ${{ inputs.winget-x64-sha256 }}
+        INPUT_WINGET_ARM64_URL: ${{ inputs.winget-arm64-url }}
+        INPUT_WINGET_ARM64_SHA256: ${{ inputs.winget-arm64-sha256 }}
+        INPUT_WINGET_DIR: ${{ inputs.winget-dir }}
