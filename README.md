@@ -121,6 +121,8 @@ Standard Cargo build flags. These map directly to familiar `cargo build` options
     locked: 'true'
 ```
 
+**Tip:** For musl builds, consider using [mimalloc](https://crates.io/crates/mimalloc) as the global allocator for improved performance.
+
 **Example: Pre-build hook for WASM/frontend projects**
 
 For projects that require a frontend build (WASM, npm, etc.) before `cargo build`:
