@@ -3,7 +3,7 @@
 use common.nu [output, hr-line, error]
 
 def main [] {
-    check-cosign
+    let cosign_path = get-cosign-path
 
     let artifact_path = $env.ARTIFACT_PATH? | default ""
     if $artifact_path == "" {
@@ -29,7 +29,7 @@ def main [] {
         $artifact_path
     ]
 
-    let result = do { cosign ...$args } | complete
+    let result = do { ^$cosign_path ...$args } | complete
     if $result.exit_code != 0 {
         print $"(ansi red)cosign output:(ansi reset)"
         print $result.stderr
@@ -57,39 +57,40 @@ def main [] {
     output "artifact_path" $artifact_path
 }
 
-# Checks that cosign is available, installs if missing
-def check-cosign [] {
-    if (which cosign | is-empty) {
-        print $"(ansi yellow)cosign not found, installing...(ansi reset)"
-        let cosign_version = "3.0.4"
-        let is_windows = (sys host | get name) == "Windows"
+# Gets cosign path, installing if missing
+def get-cosign-path []: nothing -> string {
+    let existing = which cosign | get -i 0.path
+    if $existing != null {
+        return $existing
+    }
 
-        if $is_windows {
-            let url = $"https://github.com/sigstore/cosign/releases/download/v($cosign_version)/cosign-windows-amd64.exe"
-            let temp_path = ($env.TEMP | path join "cosign.exe")
-            let dest_path = ($env.USERPROFILE | path join ".local" "bin" "cosign.exe")
-            mkdir ($dest_path | path dirname)
-            http get $url | save -f $temp_path
-            mv $temp_path $dest_path
-            # Add to PATH for this session
-            $env.PATH = ($env.PATH | prepend ($dest_path | path dirname))
-        } else {
-            let arch = match (^uname -m | str trim) {
-                "arm64" | "aarch64" => "arm64"
-                _ => "amd64"
-            }
-            let os = match (^uname -s | str trim | str downcase) {
-                "darwin" => "darwin"
-                _ => "linux"
-            }
-            let url = $"https://github.com/sigstore/cosign/releases/download/v($cosign_version)/cosign-($os)-($arch)"
-            http get $url | save -f /tmp/cosign
-            chmod +x /tmp/cosign
-            if (which sudo | is-not-empty) {
-                sudo mv /tmp/cosign /usr/local/bin/cosign
-            } else {
-                mv /tmp/cosign /usr/local/bin/cosign
-            }
+    print $"(ansi yellow)cosign not found, installing...(ansi reset)"
+    let cosign_version = "3.0.4"
+    let is_windows = (sys host | get name) == "Windows"
+
+    if $is_windows {
+        let url = $"https://github.com/sigstore/cosign/releases/download/v($cosign_version)/cosign-windows-amd64.exe"
+        let dest_path = ($env.USERPROFILE | path join ".local" "bin" "cosign.exe")
+        mkdir ($dest_path | path dirname)
+        http get $url | save -f $dest_path
+        $dest_path
+    } else {
+        let arch = match (^uname -m | str trim) {
+            "arm64" | "aarch64" => "arm64"
+            _ => "amd64"
         }
+        let os = match (^uname -s | str trim | str downcase) {
+            "darwin" => "darwin"
+            _ => "linux"
+        }
+        let url = $"https://github.com/sigstore/cosign/releases/download/v($cosign_version)/cosign-($os)-($arch)"
+        http get $url | save -f /tmp/cosign
+        chmod +x /tmp/cosign
+        if (which sudo | is-not-empty) {
+            sudo mv /tmp/cosign /usr/local/bin/cosign
+        } else {
+            mv /tmp/cosign /usr/local/bin/cosign
+        }
+        "/usr/local/bin/cosign"
     }
 }

@@ -1,8 +1,10 @@
 # Changelog
 
-## v1.9.0
+## v1.9.0 (Feb 1, 2026)
 
-(no changes yet)
+### Bug Fixes
+
+ * Fix `cosign` path resolution on Windows
 
 ## v1.8.0 (Feb 1, 2026)
 
