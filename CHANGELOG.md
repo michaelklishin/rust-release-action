@@ -2,7 +2,9 @@
 
 ## v1.5.0
 
-(no changes yet)
+### Bug Fixes
+
+ * Fix mutable variable capture in cosign signing closure
 
 ## v1.4.0 (Feb 1, 2026)
 

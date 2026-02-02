@@ -40,7 +40,8 @@ def main [] {
         $artifact_path
     ])
 
-    let result = do { cosign ...$args } | complete
+    let final_args = $args
+    let result = do { cosign ...$final_args } | complete
     if $result.exit_code != 0 {
         print $"(ansi red)cosign output:(ansi reset)"
         print $result.stderr
