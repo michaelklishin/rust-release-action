@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.12.0 (Feb 1, 2026)
+
+### Bug Fixes
+
+ * Auto-install WiX Toolset for Windows MSI builds
+
 ## v1.11.0 (Feb 1, 2026)
 
 ### New Features

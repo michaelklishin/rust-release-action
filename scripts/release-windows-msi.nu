@@ -2,6 +2,47 @@
 
 use common.nu [get-cargo-info, output, copy-docs, copy-includes, ensure-lockfile, cargo-build, hr-line, error, check-rust-toolchain, generate-checksums, output-build-results, run-pre-build-hook]
 
+# Checks that WiX Toolset is available, installs if missing
+def check-wix-toolset [] {
+    # Check if candle.exe (WiX compiler) is in PATH or WIX env var is set
+    if (which candle | is-not-empty) {
+        return
+    }
+    if ($env.WIX? | default "" | $in != "") {
+        return
+    }
+
+    print $"(ansi yellow)WiX Toolset not found, installing via winget...(ansi reset)"
+
+    # Try winget first (available on Windows Server 2022 runners)
+    let result = do { winget install --id WiXToolset.WiX --version 3.14.1 --accept-source-agreements --accept-package-agreements } | complete
+    if $result.exit_code == 0 {
+        # Add WiX to PATH
+        let wix_path = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
+        if ($wix_path | path exists) {
+            $env.PATH = ($env.PATH | prepend $wix_path)
+            $env.WIX = "C:\\Program Files (x86)\\WiX Toolset v3.14"
+            return
+        }
+    }
+
+    # Fallback to chocolatey
+    print $"(ansi yellow)Trying chocolatey...(ansi reset)"
+    let result = do { choco install wixtoolset -y --version 3.14.1 } | complete
+    if $result.exit_code != 0 {
+        error "Failed to install WiX Toolset"
+    }
+
+    # Add WiX to PATH
+    let wix_path = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
+    if ($wix_path | path exists) {
+        $env.PATH = ($env.PATH | prepend $wix_path)
+        $env.WIX = "C:\\Program Files (x86)\\WiX Toolset v3.14"
+    } else {
+        error "WiX Toolset installed but bin directory not found"
+    }
+}
+
 def main [] {
     let skip_build = $env.SKIP_BUILD? | default "" | $in == "true"
     let custom_binary_path = $env.BINARY_PATH? | default ""
@@ -55,6 +96,9 @@ def main [] {
 
     # Copy binaries to target/release for cargo-wix
     cp -r ($"($release_dir)/*" | into glob) target/release/
+
+    # Ensure WiX Toolset is installed
+    check-wix-toolset
 
     if (which cargo-wix | is-empty) {
         print $"(ansi yellow)Installing cargo-wix...(ansi reset)"
