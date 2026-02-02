@@ -14,7 +14,7 @@ def main [] {
     print $"(ansi green_bold)Running tests...(ansi reset)"
     print ""
 
-    let test_files = glob $"($test_dir)/nu/*.nu"
+    let test_files = glob ($test_dir | path join "nu" "*.nu")
     let results = $test_files | each {|file|
         let name = $file | path basename
         print $"  ($name)..."
