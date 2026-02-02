@@ -48,12 +48,12 @@ def main [] {
     $collection | each {|a| print $"  ($a.platform): ($a.artifact)" }
 
     # Output individual platform checksums for Homebrew/Winget
-    let macos_arm64 = $collection | where platform == "macos-arm64" | first?
-    let macos_x64 = $collection | where platform == "macos-x64" | first?
-    let linux_arm64 = $collection | where platform == "linux-arm64" | first?
-    let linux_x64 = $collection | where platform == "linux-x64" | first?
-    let windows_x64 = $collection | where platform == "windows-x64" | first?
-    let windows_arm64 = $collection | where platform == "windows-arm64" | first?
+    let macos_arm64 = $collection | where platform == "macos-arm64" | get -o 0
+    let macos_x64 = $collection | where platform == "macos-x64" | get -o 0
+    let linux_arm64 = $collection | where platform == "linux-arm64" | get -o 0
+    let linux_x64 = $collection | where platform == "linux-x64" | get -o 0
+    let windows_x64 = $collection | where platform == "windows-x64" | get -o 0
+    let windows_arm64 = $collection | where platform == "windows-arm64" | get -o 0
 
     if $macos_arm64 != null {
         output "macos_arm64_sha256" $macos_arm64.sha256
