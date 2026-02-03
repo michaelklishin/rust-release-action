@@ -635,6 +635,6 @@ This Action is dual-licensed under:
  * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
  * MIT license ([LICENSE-MIT](LICENSE-MIT))
 
- ## Copyright
+## Copyright
 
  2025-2026 (c) Michael S. Klishin and Contributors.
