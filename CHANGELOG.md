@@ -1,8 +1,12 @@
 # Changelog
 
-## v1.19.0 (unreleased)
+## v1.19.0 (Feb 3, 2026)
 
-(no changes yet)
+### Enhancements
+
+ * Improve SBOM section formatting in release body
+ * Simplify `generate-aur.nu` variable handling and error messages
+ * Add tests for `get-cargo-info`, `copy-docs`, `copy-includes`
 
 ## v1.18.0 (Feb 3, 2026)
 
