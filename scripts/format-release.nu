@@ -126,9 +126,9 @@ def format-sbom-section [dir: string]: nothing -> string {
     for file in $sbom_files {
         let name = $file.name | path basename
         if $name =~ ".spdx.json$" {
-            $section = $section + $"- `($name)` - SPDX format\n"
+            $section = $section + $" * `($name)`: in the SPDX format\n"
         } else if $name =~ ".cdx.json$" {
-            $section = $section + $"- `($name)` - CycloneDX format\n"
+            $section = $section + $" * `($name)`: in the CycloneDX format\n"
         }
     }
 
