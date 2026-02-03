@@ -36,11 +36,11 @@ def main [] {
         $body = $body + $install_section
     }
 
-    # 3. Downloads table
+    # 3. Build Assets table
     if ($artifacts_dir | path exists) {
         let artifacts = list-release-artifacts $artifacts_dir
         if ($artifacts | is-not-empty) {
-            $body = $body + "## Downloads\n\n"
+            $body = $body + "## Build Assets\n\n"
             $body = $body + (format-artifacts-table $artifacts)
         }
 

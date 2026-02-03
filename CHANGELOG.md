@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.16.0 (Feb 2, 2026)
+
+### Enhancements
+
+ * Rename "Downloads" section to "Build Assets" in release body
+
 ## v1.15.0 (Feb 2, 2026)
 
 ### New Features
