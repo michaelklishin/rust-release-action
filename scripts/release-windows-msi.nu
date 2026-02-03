@@ -20,7 +20,8 @@ def find-wix-files [package_name: string]: nothing -> list<string> {
     # For workspace packages, check the package's directory
     if $package_name != "" {
         let manifest_path = get-package-manifest-path $package_name
-        let pkg_dir = $manifest_path | path dirname
+        # Normalize to forward slashes for glob compatibility on Windows
+        let pkg_dir = $manifest_path | path dirname | str replace --all '\' '/'
         let pkg_pattern = $"($pkg_dir)/wix/*.wxs"
         glob $pkg_pattern
     } else {
