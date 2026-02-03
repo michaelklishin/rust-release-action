@@ -74,11 +74,20 @@ export def get-version-output [binary: string]: nothing -> string {
 
     for flag in $flags {
         let result = do { ^$binary $flag } | complete
-        if $result.exit_code == 0 and ($result.stdout | str trim | is-not-empty) {
-            return $result.stdout
+        # Check stdout first, then stderr (some tools output version to stderr)
+        if $result.exit_code == 0 {
+            if ($result.stdout | str trim | is-not-empty) {
+                return $result.stdout
+            }
+            if ($result.stderr | str trim | is-not-empty) {
+                return $result.stderr
+            }
         }
     }
 
+    # Debug: try running with --version and show what happened
+    let debug = do { ^$binary --version } | complete
+    print $"  Debug: exit=($debug.exit_code) stdout=($debug.stdout | str trim) stderr=($debug.stderr | str trim)"
     ""
 }
 
