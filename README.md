@@ -684,6 +684,23 @@ jobs:
 
 ---
 
+## More Examples
+
+The [`examples/`](examples/) directory contains ready-to-use workflow templates:
+
+| Workflow | Description |
+|----------|-------------|
+| [basic-release.yml](examples/basic-release.yml) | Single-platform Linux release |
+| [multi-platform.yml](examples/multi-platform.yml) | Linux, macOS, and Windows builds |
+| [linux-packages.yml](examples/linux-packages.yml) | Debian, RPM, and Alpine packages |
+| [installers.yml](examples/installers.yml) | macOS DMG and Windows MSI |
+| [package-managers.yml](examples/package-managers.yml) | Homebrew, AUR, and Winget manifests |
+| [supply_chain_security.yml](examples/supply_chain_security.yml) | SBOM generation and Sigstore signing |
+| [verify-artifacts.yml](examples/verify-artifacts.yml) | Test packages across distributions |
+| [complete.yml](examples/complete.yml) | Full workflow with all features |
+
+---
+
 ## License
 
 This Action is dual-licensed under:
