@@ -1,6 +1,10 @@
 # Changelog
 
-## v1.21.0 (unreleased)
+## v1.22.0 (unreleased)
+
+(no changes yet)
+
+## v1.21.0 (Feb 3, 2026)
 
 ### Bug Fixes
 
