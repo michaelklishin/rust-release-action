@@ -89,9 +89,12 @@ def test-msi [msi_path: string, binary_name: string, version: string] {
 }
 
 def install-msi [msi_path: string, install_dir: string] {
-    print $"(ansi green)Installing MSI to:(ansi reset) ($install_dir)"
+    # Normalize path to backslashes and ensure trailing backslash for msiexec
+    let win_path = $install_dir | str replace --all '/' '\' | str trim --right --char '\'
+    let win_path = $"($win_path)\\"
+    print $"(ansi green)Installing MSI to:(ansi reset) ($win_path)"
     # cargo-wix uses APPLICATIONFOLDER for the install directory
-    let result = do { msiexec /i $msi_path /quiet /norestart $"APPLICATIONFOLDER=($install_dir)" } | complete
+    let result = do { msiexec /i $msi_path /quiet /norestart $"APPLICATIONFOLDER=($win_path)" } | complete
     if $result.exit_code != 0 {
         error $"failed to install MSI: ($result.stderr)"
     }
