@@ -2,7 +2,9 @@
 
 ## v1.21.0 (unreleased)
 
-(no changes yet)
+### Bug Fixes
+
+ * `download-release`: fall back to nushell's `http get` when `curl` is unavailable
 
 ## v1.20.1 (Feb 3, 2026)
 

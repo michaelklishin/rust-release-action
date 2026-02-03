@@ -43,8 +43,32 @@ export def download-artifact [
     $artifact_name
 }
 
-# Runs curl with optional auth header for private repos
+# Check if curl is available
+def has-curl []: nothing -> bool {
+    (which curl | length) > 0
+}
+
+# Downloads a file using nushell's http get (fallback when curl unavailable)
+def http-download [url: string, output: string]: nothing -> record<exit_code: int, stderr: string> {
+    let gh_token = $env.GITHUB_TOKEN? | default ($env.GH_TOKEN? | default "")
+    let headers = if $gh_token != "" {
+        { Authorization: $"Bearer ($gh_token)" }
+    } else {
+        {}
+    }
+    try {
+        http get --headers $headers $url | save -f $output
+        { exit_code: 0, stderr: "" }
+    } catch {|e|
+        { exit_code: 1, stderr: ($e.msg? | default "http request failed") }
+    }
+}
+
+# Runs curl with optional auth header for private repos (falls back to http get)
 def curl-download [url: string, output: string]: nothing -> record<exit_code: int, stderr: string> {
+    if not (has-curl) {
+        return (http-download $url $output)
+    }
     let gh_token = $env.GITHUB_TOKEN? | default ($env.GH_TOKEN? | default "")
     if $gh_token != "" {
         do { curl -fsSL -H $"Authorization: Bearer ($gh_token)" $url -o $output } | complete
