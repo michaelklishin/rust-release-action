@@ -1,8 +1,10 @@
 # Changelog
 
-## v1.21.0 (unreleased)
+## v1.20.1 (Feb 3, 2026)
 
-(no changes yet)
+### Bug Fixes
+
+ * `get-release-version`: fix version validation rejecting valid versions
 
 ## v1.20.0 (Feb 3, 2026)
 

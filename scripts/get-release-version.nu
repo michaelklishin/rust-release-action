@@ -47,7 +47,7 @@ def main [] {
     }
 
     # Validate version format (should start with digit)
-    let first_char = $version | str substring 0..1
+    let first_char = $version | split chars | first
     if not ($first_char =~ '^\d$') {
         error $"invalid version format: ($version)"
     }
