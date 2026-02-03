@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.23.0 (Feb 3, 2026)
+
+### Bug Fixes
+
+ * `test-windows`: use a predictable install directory for MSI tests via `APPLICATIONFOLDER`
+
 ## v1.22.0 (Feb 3, 2026)
 
 ### Bug Fixes

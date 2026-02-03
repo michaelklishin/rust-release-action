@@ -79,36 +79,33 @@ def test-msi [msi_path: string, binary_name: string, version: string] {
         error $"MSI not found: ($msi_path)"
     }
 
-    install-msi $msi_path
-    verify-installed-binary $binary_name $version
+    # Use a predictable install directory for testing
+    let user_profile = $env.USERPROFILE? | default "C:/Users/runneradmin"
+    let install_dir = $"($user_profile)/($binary_name)-msi"
+
+    install-msi $msi_path $install_dir
+    verify-installed-binary $binary_name $version $install_dir
     uninstall-msi $msi_path
 }
 
-def install-msi [msi_path: string] {
-    print $"(ansi green)Installing MSI...(ansi reset)"
-    let result = do { msiexec /i $msi_path /quiet /norestart } | complete
+def install-msi [msi_path: string, install_dir: string] {
+    print $"(ansi green)Installing MSI to:(ansi reset) ($install_dir)"
+    # cargo-wix uses APPLICATIONFOLDER for the install directory
+    let result = do { msiexec /i $msi_path /quiet /norestart $"APPLICATIONFOLDER=($install_dir)" } | complete
     if $result.exit_code != 0 {
         error $"failed to install MSI: ($result.stderr)"
     }
     print "  MSI installed ✓"
 }
 
-def verify-installed-binary [binary_name: string, expected_version: string] {
+def verify-installed-binary [binary_name: string, expected_version: string, install_dir: string] {
     print $"(ansi green)Verifying installed binary...(ansi reset)"
 
-    let local_app_data = $env.LOCALAPPDATA? | default ""
-    let program_files = $env.ProgramFiles? | default "C:/Program Files"
-    let program_files_x86 = $env."ProgramFiles(x86)"? | default "C:/Program Files (x86)"
-
-    mut possible_paths = [
-        $"($program_files)/($binary_name)/($binary_name).exe"
-        $"($program_files)/($binary_name)/bin/($binary_name).exe"
-        $"($program_files_x86)/($binary_name)/($binary_name).exe"
-        $"($program_files_x86)/($binary_name)/bin/($binary_name).exe"
+    # cargo-wix installs binaries to the `bin/` subdirectory
+    let possible_paths = [
+        $"($install_dir)/($binary_name).exe"
+        $"($install_dir)/bin/($binary_name).exe"
     ]
-    if $local_app_data != "" {
-        $possible_paths = ($possible_paths | append $"($local_app_data)/Programs/($binary_name)/($binary_name).exe")
-    }
 
     mut bin_path = ""
     for path in $possible_paths {
@@ -118,19 +115,19 @@ def verify-installed-binary [binary_name: string, expected_version: string] {
         }
     }
 
-    # Try where.exe to find in PATH
-    if $bin_path == "" {
-        let result = do { where.exe $"($binary_name).exe" } | complete
-        if $result.exit_code == 0 and ($result.stdout | str trim | is-not-empty) {
-            $bin_path = $result.stdout | str trim | lines | first
-        }
-    }
-
     if $bin_path == "" {
         print $"  Checked paths: ($possible_paths | str join ', ')"
+        # List what's actually in the install directory for debugging
+        if ($install_dir | path exists) {
+            print $"  Contents of ($install_dir):"
+            ls $install_dir | each { |f| print $"    ($f.name)" }
+        } else {
+            print $"  Install directory does not exist: ($install_dir)"
+        }
         error "installed binary not found"
     }
 
+    print $"  Found: ($bin_path)"
     let version_output = get-version-output $bin_path
     if not (check-version-in-output $version_output $expected_version) {
         error $"version mismatch: expected ($expected_version) in output: ($version_output)"
