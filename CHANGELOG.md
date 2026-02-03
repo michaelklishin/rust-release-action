@@ -1,8 +1,11 @@
 # Changelog
 
-## v1.18.0 (unreleased)
+## v1.18.0 (Feb 3, 2026)
 
-(no changes yet)
+### Bug Fixes
+
+ * Fix Windows SDK `INCLUDE` path conflict by renaming internal env var to `ARCHIVE_INCLUDE`
+ * Add workspace-aware WiX file lookup for MSI builds using `cargo metadata`
 
 ## v1.17.0 (Feb 2, 2026)
 
