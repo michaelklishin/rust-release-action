@@ -48,23 +48,22 @@ def has-curl []: nothing -> bool {
     (which curl | length) > 0
 }
 
-# Downloads a file using nushell's http get (fallback when curl unavailable)
+# Downloads a file via http get (fallback when curl unavailable)
 def http-download [url: string, output: string]: nothing -> record<exit_code: int, stderr: string> {
     let gh_token = $env.GITHUB_TOKEN? | default ($env.GH_TOKEN? | default "")
-    let headers = if $gh_token != "" {
-        { Authorization: $"Bearer ($gh_token)" }
-    } else {
-        {}
-    }
     try {
-        http get --headers $headers $url | save -f $output
+        if $gh_token != "" {
+            http get --headers { Authorization: $"Bearer ($gh_token)" } $url | save -f $output
+        } else {
+            http get $url | save -f $output
+        }
         { exit_code: 0, stderr: "" }
     } catch {|e|
         { exit_code: 1, stderr: ($e.msg? | default "http request failed") }
     }
 }
 
-# Runs curl with optional auth header for private repos (falls back to http get)
+# Downloads a file via curl, falls back to http get if curl unavailable
 def curl-download [url: string, output: string]: nothing -> record<exit_code: int, stderr: string> {
     if not (has-curl) {
         return (http-download $url $output)
