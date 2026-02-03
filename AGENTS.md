@@ -66,6 +66,7 @@ For verifying YAML file syntax, use `yq`, Ruby or Python YAML modules (whichever
  * `scripts/get-release-version.nu`: fetches latest release version from GitHub
  * `tests/run.nu`: Nu shell test runner
  * `tests/nu/*.nu`: unit tests for pure functions
+ * `examples/*.yml`: workflow examples for a few common scenarios
 
 ## Nu Script Style
 
