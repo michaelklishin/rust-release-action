@@ -1,8 +1,14 @@
 # Changelog
 
-## v1.22.0 (unreleased)
+## v1.22.0 (Feb 3, 2026)
 
-(no changes yet)
+### Bug Fixes
+
+ * `test-deb`, `test-rpm`: install `sudo` if missing
+
+### Other
+
+ * Use newer distributions in the package verification example
 
 ## v1.21.0 (Feb 3, 2026)
 
