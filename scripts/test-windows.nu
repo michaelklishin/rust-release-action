@@ -97,9 +97,14 @@ def verify-installed-binary [binary_name: string, expected_version: string] {
     print $"(ansi green)Verifying installed binary...(ansi reset)"
 
     let local_app_data = $env.LOCALAPPDATA? | default ""
+    let program_files = $env.ProgramFiles? | default "C:/Program Files"
+    let program_files_x86 = $env."ProgramFiles(x86)"? | default "C:/Program Files (x86)"
+
     mut possible_paths = [
-        $"C:/Program Files/($binary_name)/($binary_name).exe"
-        $"C:/Program Files/($binary_name)/bin/($binary_name).exe"
+        $"($program_files)/($binary_name)/($binary_name).exe"
+        $"($program_files)/($binary_name)/bin/($binary_name).exe"
+        $"($program_files_x86)/($binary_name)/($binary_name).exe"
+        $"($program_files_x86)/($binary_name)/bin/($binary_name).exe"
     ]
     if $local_app_data != "" {
         $possible_paths = ($possible_paths | append $"($local_app_data)/Programs/($binary_name)/($binary_name).exe")
@@ -113,6 +118,7 @@ def verify-installed-binary [binary_name: string, expected_version: string] {
         }
     }
 
+    # Try where.exe to find in PATH
     if $bin_path == "" {
         let result = do { where.exe $"($binary_name).exe" } | complete
         if $result.exit_code == 0 and ($result.stdout | str trim | is-not-empty) {
@@ -121,6 +127,7 @@ def verify-installed-binary [binary_name: string, expected_version: string] {
     }
 
     if $bin_path == "" {
+        print $"  Checked paths: ($possible_paths | str join ', ')"
         error "installed binary not found"
     }
 
