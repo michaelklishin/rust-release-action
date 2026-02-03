@@ -43,12 +43,24 @@ export def download-artifact [
     $artifact_name
 }
 
-# Check if curl is available
-def has-curl []: nothing -> bool {
-    (which curl | length) > 0
+# Tries to install curl if missing (best effort, warns on failure)
+def ensure-curl [] {
+    if (which curl | length) > 0 { return }
+    print "  curl not found, attempting to install..."
+    # Try apt-get (Debian/Ubuntu)
+    let apt = do { apt-get update -qq } | complete
+    if $apt.exit_code == 0 {
+        do { apt-get install -y -qq curl } | complete
+    } else {
+        # Try dnf (Fedora/RHEL)
+        do { dnf install -y -q curl } | complete
+    }
+    if (which curl | length) == 0 {
+        print $"(ansi yellow)  Warning: could not install curl, falling back to http module(ansi reset)"
+    }
 }
 
-# Downloads a file via http get (fallback when curl unavailable)
+# Downloads via http module (fallback when curl unavailable)
 def http-download [url: string, output: string]: nothing -> record<exit_code: int, stderr: string> {
     let gh_token = $env.GITHUB_TOKEN? | default ($env.GH_TOKEN? | default "")
     try {
@@ -63,9 +75,10 @@ def http-download [url: string, output: string]: nothing -> record<exit_code: in
     }
 }
 
-# Downloads a file via curl, falls back to http get if curl unavailable
+# Downloads a file via curl, falls back to http module
 def curl-download [url: string, output: string]: nothing -> record<exit_code: int, stderr: string> {
-    if not (has-curl) {
+    ensure-curl
+    if (which curl | length) == 0 {
         return (http-download $url $output)
     }
     let gh_token = $env.GITHUB_TOKEN? | default ($env.GH_TOKEN? | default "")
