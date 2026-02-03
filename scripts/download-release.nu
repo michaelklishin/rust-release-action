@@ -53,9 +53,9 @@ def http-download [url: string, output: string]: nothing -> record<exit_code: in
     let gh_token = $env.GITHUB_TOKEN? | default ($env.GH_TOKEN? | default "")
     try {
         if $gh_token != "" {
-            http get --headers { Authorization: $"Bearer ($gh_token)" } $url | save -f $output
+            http get --raw --headers { Authorization: $"Bearer ($gh_token)" } $url | save -f $output
         } else {
-            http get $url | save -f $output
+            http get --raw $url | save -f $output
         }
         { exit_code: 0, stderr: "" }
     } catch {|e|
