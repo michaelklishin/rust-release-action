@@ -28,7 +28,7 @@ def test-nfpm-base-config [] {
     assert ($config | str contains "platform: linux")
     assert ($config | str contains 'version: "1.2.3"')
     assert ($config | str contains 'maintainer: "Unknown <unknown@example.com>"')
-    assert ($config | str contains 'description: "myapp - built with rust-release-action"')
+    assert ($config | str contains 'description: "myapp - built with rust-build-package-release-action"')
 }
 
 def test-nfpm-base-config-with-metadata [] {

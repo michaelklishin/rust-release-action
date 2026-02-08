@@ -15,7 +15,7 @@ def main [] {
     }
 
     let formula_class = $env.HOMEBREW_FORMULA_CLASS? | default (to-class-name $binary_name)
-    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-release-action"
+    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-build-package-release-action"
     let homepage = $env.PKG_HOMEPAGE? | default ""
     let license = $env.PKG_LICENSE? | default ""
 

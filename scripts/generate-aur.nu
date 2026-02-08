@@ -15,7 +15,7 @@ def main [] {
         error "could not determine version - set the 'version' input"
     }
 
-    let description = $env.PKG_DESCRIPTION? | default $"($pkg_name) - built with rust-release-action"
+    let description = $env.PKG_DESCRIPTION? | default $"($pkg_name) - built with rust-build-package-release-action"
     let homepage = $env.PKG_HOMEPAGE? | default ""
     let license = $env.PKG_LICENSE? | default "MIT"
     let maintainer = $env.AUR_MAINTAINER? | default ""

@@ -304,7 +304,7 @@ export def nfpm-base-config [
     version: string
     arch: string
 ]: nothing -> string {
-    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-release-action"
+    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-build-package-release-action"
     let maintainer = $env.PKG_MAINTAINER? | default "Unknown <unknown@example.com>"
     let homepage = $env.PKG_HOMEPAGE? | default ""
     let license = $env.PKG_LICENSE? | default ""

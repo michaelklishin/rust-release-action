@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-# Test runner for rust-release-action Nu shell scripts
+# Test runner for rust-build-package-release-action Nu shell scripts
 
 def run-test [file: string, scripts_dir: string]: nothing -> bool {
     let result = do { ^nu --env-config '' --config '' -I $scripts_dir $file } | complete

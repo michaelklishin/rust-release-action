@@ -1,6 +1,6 @@
 # Examples
 
-Workflow examples for rust-release-action.
+Workflow examples for rust-build-package-release-action.
 
 ## Workflows
 
@@ -26,6 +26,6 @@ cp examples/basic-release.yml .github/workflows/release.yml
 
 Before using:
 
- * Replace `michaelklishin/rust-release-action@v1` with a pinned version
+ * Replace `michaelklishin/rust-build-package-release-action@v1` with a pinned version
  * Update package metadata (`pkg-maintainer`, `pkg-description`, etc.)
  * Adjust target triples for your platforms

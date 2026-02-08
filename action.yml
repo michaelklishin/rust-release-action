@@ -1,5 +1,5 @@
-name: 'Rust Release Action'
-description: 'Automate Rust project releases with changelog extraction, version validation, and cross-platform builds'
+name: 'Rust Build, Package and Release Action'
+description: 'Automate Rust project releases with changelog extraction, version validation, cross-platform builds, packaging, SBOM generation and producing GitHub releases'
 author: 'Michael Klishin'
 
 branding:

@@ -108,7 +108,7 @@ def generate-nfpm-config [
 ]: nothing -> string {
     let release_num = $env.PKG_RELEASE? | default "1"
     let group = $env.PKG_GROUP? | default "Applications/System"
-    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-release-action"
+    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-build-package-release-action"
     let summary = $env.PKG_SUMMARY? | default $description
 
     mut config = nfpm-base-config $binary_name $version $arch

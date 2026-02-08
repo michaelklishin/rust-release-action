@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`rust-release-action` is an **opinionated** GitHub Action that automates release workflows for Rust projects,
+`rust-build-package-release-action` is an **opinionated** GitHub Action that automates release workflows for Rust projects,
 built as a collection of Nu shell scripts.
 
 This is a conventions-based, opinionated release process extracted from:

@@ -17,7 +17,7 @@ def main [] {
     let publisher = $env.WINGET_PUBLISHER? | default ""
     let publisher_id = $env.WINGET_PUBLISHER_ID? | default ($publisher | str replace -a " " "")
     let package_id = $env.WINGET_PACKAGE_ID? | default $binary_name
-    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-release-action"
+    let description = $env.PKG_DESCRIPTION? | default $"($binary_name) - built with rust-build-package-release-action"
     let homepage = $env.PKG_HOMEPAGE? | default ""
     let license = $env.PKG_LICENSE? | default "MIT"
     let license_url = $env.WINGET_LICENSE_URL? | default ""
