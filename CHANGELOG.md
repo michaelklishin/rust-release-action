@@ -1,8 +1,10 @@
 # Changelog
 
-## v1.24.0 (in development)
+## v1.24.0 (Feb 8, 2026)
 
-(no changes yet)
+### Enhancements
+
+ * The Action was renamed to `rust-build-package-release-action` for GitHub Actions Marketplace publishing
 
 ## v1.23.1 (Feb 3, 2026)
 
