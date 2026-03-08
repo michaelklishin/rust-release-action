@@ -518,7 +518,8 @@ runs:
       id: run
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: "${{ github.action_path }}/target/release/rust-release-action" "${{ inputs.command }}"
+      run: |
+        "${{ github.action_path }}/target/release/rust-release-action" "${{ inputs.command }}"
       env:
         # All inputs passed as INPUT_* environment variables
         INPUT_COMMAND: ${{ inputs.command }}

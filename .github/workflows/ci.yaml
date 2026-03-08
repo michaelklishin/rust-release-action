@@ -3,8 +3,11 @@ name: CI
 on:
   push:
     paths:
+      - 'src/**'
       - 'scripts/**'
       - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - 'action.yml'
       - '.github/workflows/ci.yaml'
   pull_request:
@@ -17,6 +20,16 @@ permissions:
   contents: read
 
 jobs:
+  test-rust:
+    name: Rust Tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test
+      - run: cargo clippy --all-targets -- -D warnings
+
   test-scripts:
     name: Test Scripts (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
