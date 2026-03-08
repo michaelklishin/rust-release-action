@@ -8,7 +8,7 @@ branding:
 
 inputs:
   # ─────────────────────────────────────────────────────────────────────────────
-  # Core inputs - universal options used across commands
+  # Core inputs: universal options used across commands
   # ─────────────────────────────────────────────────────────────────────────────
   command:
     description: 'Command to run'
@@ -35,7 +35,7 @@ inputs:
     default: '.'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Build options - standard Cargo build flags
+  # Build options: standard Cargo build flags
   # ─────────────────────────────────────────────────────────────────────────────
   pre-build:
     description: 'Shell command to run before cargo build (e.g., frontend build step)'
@@ -71,7 +71,7 @@ inputs:
     default: 'false'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Output options - control artifact generation
+  # Output options: control artifact generation
   # ─────────────────────────────────────────────────────────────────────────────
   archive:
     description: 'Create archive (.tar.gz on Linux/macOS, .zip on Windows)'
@@ -86,7 +86,7 @@ inputs:
     required: false
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Changelog options - for extract-changelog command
+  # Changelog options: for extract-changelog command
   # ─────────────────────────────────────────────────────────────────────────────
   changelog:
     description: 'Path to CHANGELOG.md'
@@ -98,7 +98,7 @@ inputs:
     default: 'release_notes.md'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Version validation - for validate-version command
+  # Version validation: for validate-version command
   # ─────────────────────────────────────────────────────────────────────────────
   tag:
     description: 'Git tag to validate (defaults to GITHUB_REF_NAME)'
@@ -112,7 +112,7 @@ inputs:
     default: 'false'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Package metadata (pkg-*) - shared across deb/rpm/apk/brew/aur/winget
+  # Package metadata (pkg-*): shared across deb/rpm/apk/brew/aur/winget
   # ─────────────────────────────────────────────────────────────────────────────
   pkg-description:
     description: 'Package description'
@@ -167,7 +167,7 @@ inputs:
     required: false
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # SBOM options (sbom-*) - for generate-sbom command
+  # SBOM options (sbom-*): used by the `generate-sbom` command
   # ─────────────────────────────────────────────────────────────────────────────
   sbom-format:
     description: 'SBOM formats to generate (spdx, cyclonedx, or both)'
@@ -179,7 +179,7 @@ inputs:
     default: 'target/sbom'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Homebrew options (brew-*) - for generate-homebrew command
+  # Homebrew options (brew-*): used by the `generate-homebrew` command
   # ─────────────────────────────────────────────────────────────────────────────
   brew-class:
     description: 'Ruby class name for formula (auto-generated from binary name)'
@@ -214,21 +214,21 @@ inputs:
     default: 'target/homebrew'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Signing options - for sign-artifact command
+  # Signing options: for the `sign-artifact` command
   # ─────────────────────────────────────────────────────────────────────────────
   artifact:
     description: 'Path to artifact (for signing or testing)'
     required: false
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Artifact collection options - for collect-artifacts command
+  # Artifact collection options: for the `collect-artifacts` command
   # ─────────────────────────────────────────────────────────────────────────────
   base-url:
     description: 'Base URL for artifact downloads (e.g., https://github.com/user/repo/releases/download/v1.0.0)'
     required: false
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Release body options - for format-release command
+  # Release body options: for the `format-release` command
   # ─────────────────────────────────────────────────────────────────────────────
   artifacts-dir:
     description: 'Directory containing release artifacts'
@@ -257,7 +257,7 @@ inputs:
     required: false
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # AUR options (aur-*) - for generate-aur command
+  # AUR options (aur-*): for the `generate-aur` command
   # ─────────────────────────────────────────────────────────────────────────────
   aur-name:
     description: 'AUR package name (defaults to binary name)'
@@ -284,7 +284,7 @@ inputs:
     default: 'target/aur'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Winget options (winget-*) - for generate-winget command
+  # Winget options (winget-*): for the `generate-winget` command
   # ─────────────────────────────────────────────────────────────────────────────
   winget-publisher:
     description: 'Publisher display name'
@@ -322,7 +322,7 @@ inputs:
     default: 'target/winget'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Crate publishing options - for publish-crate command
+  # Crate publishing options: for the `publish-crate` command
   # ─────────────────────────────────────────────────────────────────────────────
   publish-dry-run:
     description: 'Run cargo publish --dry-run only (validates packaging without publishing)'
@@ -330,7 +330,7 @@ inputs:
     default: 'false'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Artifact testing options - for test-deb, test-rpm, test-windows commands
+  # Artifact testing options: for `test-deb`, `test-rpm`, `test-windows` commands
   # ─────────────────────────────────────────────────────────────────────────────
   checksum-file:
     description: 'Path to checksum file (.sha256, .sha512, or .b2) for verification'
