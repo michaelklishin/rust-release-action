@@ -322,6 +322,14 @@ inputs:
     default: 'target/winget'
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # Crate publishing options - for publish-crate command
+  # ─────────────────────────────────────────────────────────────────────────────
+  publish-dry-run:
+    description: 'Run cargo publish --dry-run only (validates packaging without publishing)'
+    required: false
+    default: 'false'
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # Artifact testing options - for test-deb, test-rpm, test-windows commands
   # ─────────────────────────────────────────────────────────────────────────────
   checksum-file:
@@ -491,6 +499,10 @@ outputs:
     description: 'SHA256 of Windows ARM64 artifact'
     value: ${{ steps.run.outputs.windows_arm64_sha256 }}
 
+  published:
+    description: 'Whether the crate was published (true/false, false for dry-run)'
+    value: ${{ steps.run.outputs.published }}
+
   result:
     description: 'Test result (success/failure) for test-* commands'
     value: ${{ steps.run.outputs.result }}
@@ -592,3 +604,4 @@ runs:
         INPUT_MSI_CHECKSUM_FILE: ${{ inputs.msi-checksum-file }}
         INPUT_DOWNLOAD_FROM_RELEASE: ${{ inputs.download-from-release }}
         INPUT_ARCH: ${{ inputs.arch }}
+        INPUT_PUBLISH_DRY_RUN: ${{ inputs.publish-dry-run }}

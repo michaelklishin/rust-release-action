@@ -2,6 +2,12 @@
 
 ## v2.0.0 (in development)
 
+### New Features
+
+ * `publish-crate` command for publishing to crates.io with Trusted Publishing (OIDC) support
+ * `publish-dry-run` input for validating packaging without publishing
+ * New example workflows: `trusted-publishing.yml`, `publish-crate-only.yml`
+
 ### Internal Changes
 
  * The Action is now backed by a native binary instead of a collection of Nu shell scripts

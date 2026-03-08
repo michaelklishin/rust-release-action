@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use rust_release_action::{
-    aur, changelog, collect_artifacts, format_release, homebrew, release, sbom, sign, testing,
-    version, winget,
+    aur, changelog, collect_artifacts, format_release, homebrew, publish, release, sbom, sign,
+    testing, version, winget,
 };
 use std::{env, process};
 
@@ -35,6 +35,7 @@ enum Command {
     ReleaseMacosDmg,
     ReleaseWindows,
     ReleaseWindowsMsi,
+    PublishCrate,
     TestDeb,
     TestRpm,
     TestWindows,
@@ -69,6 +70,7 @@ fn main() {
         Command::ReleaseMacosDmg => release::run_release_macos_dmg(),
         Command::ReleaseWindows => release::run_release_windows(),
         Command::ReleaseWindowsMsi => release::run_release_windows_msi(),
+        Command::PublishCrate => publish::run_publish_crate(),
         Command::TestDeb => testing::run_test_deb(),
         Command::TestRpm => testing::run_test_rpm(),
         Command::TestWindows => testing::run_test_windows(),
@@ -205,6 +207,7 @@ unsafe fn map_input_env_vars_inner() {
         ("INPUT_ARCHIVE", "ARCHIVE"),
         ("INPUT_VALIDATE_CARGO_TOML", "VALIDATE_CARGO_TOML"),
         ("INPUT_DOWNLOAD_FROM_RELEASE", "DOWNLOAD_FROM_RELEASE"),
+        ("INPUT_PUBLISH_DRY_RUN", "PUBLISH_DRY_RUN"),
     ];
 
     for (input_key, target_key) in bool_mappings {

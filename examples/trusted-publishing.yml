@@ -1,0 +1,154 @@
+# Multi-platform binary release with crates.io Trusted Publishing
+#
+# Publishes the crate to crates.io using OIDC-based Trusted Publishing
+# (no stored API tokens) alongside the standard binary release.
+#
+# Prerequisites:
+#   1. Create a GitHub Actions environment named "release" (Settings > Environments)
+#   2. Register a Trusted Publisher on crates.io (crate settings > Trusted Publishing)
+#      - GitHub owner, repo name, workflow filename ("release.yml"), environment ("release")
+#   3. Set NEXT_RELEASE_VERSION repository variable (Settings > Variables > Actions)
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+permissions:
+  contents: write
+  id-token: write    # Required for crates.io Trusted Publishing OIDC token exchange
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: michaelklishin/rust-build-package-release-action@v1
+        id: validate
+        with:
+          command: validate-version
+          validate-cargo-toml: 'true'
+
+      - uses: michaelklishin/rust-build-package-release-action@v1
+        with:
+          command: extract-changelog
+          version: ${{ steps.validate.outputs.version }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release_notes.md
+          retention-days: 1
+
+  publish-crate:
+    needs: validate
+    runs-on: ubuntu-22.04
+    environment: release
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - uses: michaelklishin/rust-build-package-release-action@v1
+        with:
+          command: publish-crate
+          locked: 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  build-linux:
+    needs: validate
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+
+      - uses: michaelklishin/rust-build-package-release-action@v1
+        id: build
+        with:
+          command: release-linux
+          target: ${{ matrix.target }}
+          archive: 'true'
+          locked: 'true'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.target }}
+          path: |
+            ${{ steps.build.outputs.artifact_path }}
+            ${{ steps.build.outputs.artifact_path }}.sha256
+
+  build-macos:
+    needs: validate
+    runs-on: macos-14
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+
+      - uses: michaelklishin/rust-build-package-release-action@v1
+        id: build
+        with:
+          command: release-macos
+          target: ${{ matrix.target }}
+          archive: 'true'
+          locked: 'true'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.target }}
+          path: |
+            ${{ steps.build.outputs.artifact_path }}
+            ${{ steps.build.outputs.artifact_path }}.sha256
+
+  release:
+    needs: [validate, publish-crate, build-linux, build-macos]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect files
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.sha256" \) -exec cp {} release/ \;
+          cp artifacts/release-notes/release_notes.md .
+
+      - uses: michaelklishin/rust-build-package-release-action@v1
+        id: format
+        with:
+          command: format-release
+          version: ${{ needs.validate.outputs.version }}
+          artifacts-dir: release
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.format.outputs.body }}
+          files: release/*

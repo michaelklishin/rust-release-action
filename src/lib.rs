@@ -14,6 +14,7 @@ pub mod homebrew;
 pub mod nfpm;
 pub mod output;
 pub mod platform;
+pub mod publish;
 pub mod release;
 pub mod sbom;
 pub mod sign;
