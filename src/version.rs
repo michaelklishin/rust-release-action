@@ -63,9 +63,7 @@ pub fn run_validate_version() -> Result<()> {
             );
             eprintln!();
             eprintln!("Either:");
-            eprintln!(
-                "  1. Update expected-version to '{tag_version}'"
-            );
+            eprintln!("  1. Update expected-version to '{tag_version}'");
             eprintln!(
                 "  2. Or push the correct tag: git tag v{expected} && git push origin v{expected}"
             );
